@@ -1,6 +1,6 @@
 # Transport Game Experiment (oTree)
 
-This repository contains an experimental adaptation of **The Transport Game** as described by Cantiani et al. (2024), implemented as an **oTree (v5.6.0)** application.
+This repository contains an experimental adaptation of the Transport Game described by Cantiani et al. (2024), implemented in oTree (v5.6.0) as part of an ongoing research project. The associated manuscript is currently under preparation.
 
 ## The Experiment
 
