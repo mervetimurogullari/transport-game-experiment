@@ -1,0 +1,70 @@
+{{ load otree static }}
+
+{{ block title }}
+    De andere deelnemers
+{{ endblock }}
+
+{{ block content }}
+
+    <p>
+        Voordat we verder gaan, willen we graag weten wat u verwacht van <strong>de twee andere deelnemers die samen met u 
+        gaan onderhandelen</strong>. Dit zijn net als u twee andere personen in het LISS Panel, die precies dezelfde uitleg 
+        hebben gezien als u. 
+    </p>
+    
+    <p>
+        Geef voor elk van de onderstaande stellingen over de andere deelnemers aan in hoeverre u het ermee eens of oneens bent. 
+        Wat verwacht u van deze deelnemers?
+    </p>    
+    
+    <p>
+        Let op: Als u een telefoon gebruikt, kunt u deze het beste horizontaal houden voor een beter beeld.
+    </p>
+    
+    <table class="table">
+        <tr>
+            <th style="width: 50%;">
+                <center><br> </center>
+            </th>
+            <th style="width: 10%;">
+                <center>Helemaal mee oneens<br>1</center>
+            </th>
+            <th style="width: 10%;">
+                <center>Niet mee eens<br>2</center>
+            </th>
+            <th style="width: 10%;">
+                <center>Niet mee eens niet mee oneens<br>3</center>
+            </th>
+            <th style="width: 10%;">
+                <center>Mee eens<br>4</center>
+            </th>
+            <th style="width: 10%;">
+                <center>Helemaal mee eens<br>5</center>
+            </th>
+        </tr>
+        
+        {{ for field in form }}
+            <tr>
+                <td>{{ field.label }}</td>
+                {{ for choice in field }}
+                    <td><center>{{ choice }}</center></td>
+                {{ endfor }}
+            </tr>
+        {{ endfor }}
+    </table>
+
+    <div class="row">
+        <div class="col-md-1 col-md-offset-11">
+        <button class="o-tree-btn-next btn btn-primary">Volgende</button>
+        </div>
+    </div>
+
+{{ endblock }}
+
+{{ block scripts }}
+    <style>
+        .table {
+            table-layout: fixed;
+        }
+    </style>
+{{ endblock }}

@@ -1,41 +1,51 @@
 {{ block title }}
-Research Overview
+    Research overview
 {{ endblock }}
 
 {{ block content }}
+    <p>
+        This study consists of three parts.
+    </p>
 
-        <p>
-            This study consists of three parts.
-        </p>
-        <p>
-        In the first part, we explain the situation and also how you will negotiate with the other two participants.
+    <p>
+        <strong>Part 1:</strong> A step-by-step explanation of this study. 
         {{ if timers }}
-        In this part of the survey, there is a time limit. You have a maximum of {{ timeout_time_minutes }}0 minutes per page.
+        Each page in this section has a {{ timeout_time_minutes }}-minute limit.
         {{ endif }}
-        Read all instructions carefully so that you have a good understanding of the situation. {{ if comprehension_check }}We will ask you questions about it {{ endif }}.
-        </p>
+        Please read everything carefully to fully understand the study.
+        {{ if comprehension_check }}
+        At the end, we will ask you a few questions to check whether everything is clear.
+        {{ endif }}
+    </p>
 
-        <p>
-            In the second part, you will be matched with two other participants.
-            {{ if timers }}
-            You have a maximum of {{ timeout_time_minutes }}0 minutes per page to provide with your answer, faster is of course always allowed. This ensures that you and the other two participants do not have to wait too long for each other.
-            {{ endif }}
-            {{ if incentives }}
-            The important thing to remember is that you can earn money during negotiation. The better you negotiate, the more you get.
-            {{ endif }}
-        </p>
+    <p>
+        <strong>Part 2:</strong> You are matched with two other participants for the actual negotiation. 
+        {{ if timers }}
+        Each page also has a {{ timeout_time_minutes }}-minute time limit, but feel free to respond quicker if possible. 
+        This helps keeping the negotiation moving without long waits. 
+        {{ endif }}
+        {{ if incentives }}
+        Remember that the outcome of the negotiation can earn you money. The better your negotiation outcomes, the more you earn. 
+        {{ endif }}
+        During the negotiation you will answer questions about how you view your negotiation partners.
+    </p>
 
+    <p>
+        <strong>Part 3:</strong> This section involves personal and study-related questions. 
+        {{ if timers }}
+        There is no time limit here because you are no longer negotiating with others. 
+        {{ endif }}
+    </p>
 
-        <p>
-            In the third section, we ask a few questions about yourself and the study.
-            {{ if timers }}
-            During this part of the study, there is no time limit because you are no longer negotiating with others.
-            {{ endif }}
-        </p>
+    <p>
+        <strong>Important note: To capture changes in your views and the negotiation dynamics, please expect to see similar 
+        questions repeated throughout all three parts of the study.</strong>
+    </p>
 
-        <p>
-        Now click on “Next”
-        </p>
+    <p>
+        Now click on “Next” and the negotiation situation will be explained further.
+    </p>
 
-{{ next_button }}
+    {{ next_button }}
+    
 {{ endblock }}

@@ -1,78 +1,119 @@
 {{ block title }}
-Phase 2: Select a proposal
+    Phase 2: Select a proposal
 {{ endblock }}
 
 {{ block content }}
     <div class="row">
-
         <table class="table table-hover">
             <thead>
-            <th>Offer made by</th>
-            <th>Coalition type</th>
-                <th>Share for Company A (transports {{ resources_player_A }} tons)
-                {{ if player.position == 'A' }}
-                    <strong class="text-info">(This is you)</strong>
-                {{ endif }}</th>
-            <th>Share for Company B (transports {{ resources_player_B }} tons)
-                {{ if player.position == 'B' }}
-                    <strong class="text-info">(This is you)</strong>
-                {{ endif }}
-            </th>
-            <th>Share for Company C (transports {{ resources_player_C }} tons)
-                {{ if player.position == 'C' }}
-                    <strong class="text-info">(This is you)</strong>
-                {{ endif }}
-            </th>
-            </thead>
-            <tbody>
-            {{ for p in group.get_players }}
                 <tr>
-                    <td>
-                        Company {{ p.position }}
-                        {{ if p == player }}
+                    <th>Offer made by</th>
+                    <th>Coalition type</th>
+                    <th>
+                        Share for Company A (transports {{ resources_player_A }} tons)
+                        {{ if player.position == 'A' }}
+                            {{ if player.group.is_experimental }}
+                            <img src="data:image/png;base64,{{ player.gauge_plot_svo }}" style="height: 4cm; width: 4cm;"/><br>
+                            {{ endif }}    
                             <strong class="text-info">(This is you)</strong>
+                        {{ else }}
+                            {{ for other_player in player.group.get_players }}
+                                {{if other_player.position == 'A' and player.group.is_experimental}}
+                                    <img src="data:image/png;base64,{{ other_player.gauge_plot_svo }}" style="height: 4cm; width: 4cm;"/><br><br>
+                                {{ endif }}
+                            {{ endfor }}
                         {{ endif }}
-                    </td>
-                    <td>{{ p.proposed_coalition }}</td>
-                    <td>{{ if p.allocate_to_player_A >= 0 }} {{ p.allocate_to_player_A }} euros{{ endif }}</td>
-                    <td>{{ if p.allocate_to_player_B >= 0 }} {{ p.allocate_to_player_B }} euros{{ endif }}</td>
-                    <td>{{ if p.allocate_to_player_C >= 0 }} {{ p.allocate_to_player_C }} euros{{ endif }}</td>
+                    </th>
+
+                    <th>
+                        Share for Company B (transports {{ resources_player_B }} tons)
+                        {{ if player.position == 'B' }}
+                            {{ if player.group.is_experimental }}
+                            <img src="data:image/png;base64,{{ player.gauge_plot_svo }}" style="height: 4cm; width: 4cm;"/><br>
+                            {{ endif }} 
+                            <strong class="text-info">(This is you)</strong>
+                        {{ else }}
+                            {{ for other_player in player.group.get_players }}
+                                {{if other_player.position == 'B' and player.group.is_experimental}}
+                                    <img src="data:image/png;base64,{{ other_player.gauge_plot_svo }}" style="height: 4cm; width: 4cm;"/><br><br>
+                                {{ endif }}
+                            {{ endfor }}
+                        {{ endif }}
+                    </th>
+
+                    <th>
+                        Share for Company C (transports {{ resources_player_C }} tons)
+                        {{ if player.position == 'C' }}
+                            {{ if player.group.is_experimental }}
+                            <img src="data:image/png;base64,{{ player.gauge_plot_svo }}" style="height: 4cm; width: 4cm;"/><br>
+                            {{ endif }} 
+                            <strong class="text-info">(This is you)</strong>
+                        {{ else }}
+                            {{ for other_player in player.group.get_players }}
+                                {{if other_player.position == 'C' and player.group.is_experimental}}
+                                    <img src="data:image/png;base64,{{ other_player.gauge_plot_svo }}" style="height: 4cm; width: 4cm;"/><br><br>
+                                {{ endif }}
+                            {{ endfor }}
+                        {{ endif }}
+                    </th>
                 </tr>
-            {{ endfor }}
+            </thead>
+
+            <tbody>
+                {{ for p in group.get_players }}
+                    <tr>
+                        <td>
+                            Company {{ p.position }}
+                            {{ if p == player }}
+                                <strong class="text-info">(This is you)</strong>
+                            {{ endif }}
+                        </td>
+                        <td>{{ p.proposed_coalition }}</td>
+                        <td>{{ if p.allocate_to_player_A >= 0 }} {{ p.allocate_to_player_A }} euros{{ endif }}</td>
+                        <td>{{ if p.allocate_to_player_B >= 0 }} {{ p.allocate_to_player_B }} euros{{ endif }}</td>
+                        <td>{{ if p.allocate_to_player_C >= 0 }} {{ p.allocate_to_player_C }} euros{{ endif }}</td>
+                    </tr>
+                {{ endfor }}
             </tbody>
         </table>
-
     </div>
 
     <div class="row">
         <div class="col-md-12">
-            <p
-                    class="text-info">Select the coalition you want to form:
-            </p>
+            <p class="text-info">Select the coalition you want to form:</p>
 
             <ul>
-            {{ for coalition, offer_summary, a, b, c, pid in offers }}
-            <li>
-                <input required type="radio" name="selected_coalition" value="{{pid}}">
-                {{coalition}}{{ if pid != 'None' }}-Coalition: {{ endif }}
-                {{ if coalition == 'AB' and a >= 0 or coalition == 'AC' and a >= 0 or coalition == 'ABC' and a >= 0 }}Company A
-                    {{ if player.position == "A" }}
-                        <strong class="text-info">(you)</strong>
-                        {{ endif }}receives {{ a }} euros. {{ endif }}
-                {{ if coalition == 'AB' and b >= 0 or coalition == 'BC' and b >= 0 or coalition == 'ABC' and b >= 0 }}Company B
-                    {{ if player.position == "B" }}
-                        <strong class="text-info">(you)</strong>
-                        {{ endif }}receives {{ b }} euros. {{ endif }}
-                {{ if coalition == 'AC' and c >= 0 or coalition == 'BC' and c >= 0 or coalition == 'ABC' and c >= 0 }}Company C
-                    {{ if player.position == "C" }}
-                        <strong class="text-info">(you)</strong>
-                        {{ endif }}receives {{ c }} euros. {{ endif }}
-            </li>
-            {{ endfor }}
-        </ul>
+                {{ for coalition, offer_summary, a, b, c, pid in offers }}
+                    <li>
+                        <input required type="radio" name="selected_coalition" value="{{ pid }}">
+                        {{ coalition }}{{ if pid != 'None' }}-Coalition: {{ endif }}
+                        {{ if coalition == 'AB' and a >= 0 or coalition == 'AC' and a >= 0 or coalition == 'ABC' and a >= 0 }}
+                            Company A
+                            {{ if player.position == "A" }}
+                                <strong class="text-info">(you)</strong>
+                            {{ endif }}
+                            receives {{ a }} euros.
+                        {{ endif }}
+                        {{ if coalition == 'AB' and b >= 0 or coalition == 'BC' and b >= 0 or coalition == 'ABC' and b >= 0 }}
+                            Company B
+                            {{ if player.position == "B" }}
+                                <strong class="text-info">(you)</strong>
+                            {{ endif }}
+                            receives {{ b }} euros.
+                        {{ endif }}
+                        {{ if coalition == 'AC' and c >= 0 or coalition == 'BC' and c >= 0 or coalition == 'ABC' and c >= 0 }}
+                            Company C
+                            {{ if player.position == "C" }}
+                                <strong class="text-info">(you)</strong>
+                            {{ endif }}
+                            receives {{ c }} euros.
+                        {{ endif }}
+                    </li>
+                {{ endfor }}
+            </ul>
         </div>
     </div>
 
-{{ next_button }}
+    {{ next_button }}
 
 {{ endblock }}

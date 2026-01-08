@@ -1,96 +1,176 @@
 {{ block title }}
-    Toestemmingsverklaring deelname LISS panel
+    Toestemming
 {{ endblock }}
 
 {{ block content }}
+    <div id="informed_consent">
 
-<div id="informed_consent">
+        <p><strong>Studie naar samenwerking</strong></p>
 
-        <p>We vragen u om de volgende uitleg en toestemmingsverklaring goed door te lezen.
-        In de hele Europese Unie (EU) is sinds 25 mei 2018 de Algemene verordening
-        gegevensbescherming (AVG) van toepassing. Vanaf die datum geldt dezelfde
-        privacywetgeving in de hele EU. Centerdata houdt zich aan de eisen die deze wetgeving
-        stelt.</p>
-
-        <p>U doet mee aan het LISS panel dat wordt beheerd door Centerdata. Centerdata verzamelt
-        gegevens die ter beschikking worden gesteld aan onderzoekers, met als doel
-        wetenschappelijk, beleidsrelevant en maatschappelijk relevant onderzoek. Door het invullen
-        van de vragenlijsten ontvangen wij uw antwoorden. Wij gaan zeer zorgvuldig om met uw
-        gegevens en bewaren uw contactgegevens (naam, adres, telefoonnummer en e-mailadres)
-        altijd apart van uw antwoorden.</p>
-
-        <p>De onderzoekers van derde partijen (andere instellingen dan Centerdata) zullen nooit uw
-        contactgegevens verkrijgen zonder uw expliciete toestemming. De gegevens zijn niet meer
-        naar u herleidbaar. Uw privacy is en blijft maximaal beschermd.</p>
-
-        <p><strong>Toestemming</strong></p>
-
-        <p>Om mee te doen aan dit onderzoek van het LISS panel vragen we u officieel toestemming te geven voor het
-        bewaren en ter beschikking stellen van uw antwoorden voor wetenschappelijk,
-        beleidsrelevant en maatschappelijk relevant onderzoek. Uw antwoorden worden niet
-        gebruikt voor commercieel onderzoek. U kunt uw deelname op elk moment stopzetten
-        zonder hiervoor een reden op te geven.</p>
-
-
-<p class="text-danger">
-
-    {{ if timers }}
         <p>
-            Belangrijk: Dit onderzoek brengt echte interactie met zich mee en het kan zijn dat andere deelnemers op u moeten wachten.
-            Om er zeker van te zijn dat u uw <strong>volledige aandacht</strong> aan dit onderzoek geeft, hebben we op sommige pagina's een timer geïnstalleerd.
-            <strong class="text-danger">Als u tijdens de interactiefase van het onderzoek niet elke pagina binnen {{ timeout_time_minutes }}0 minuten afrondt, wordt het onderzoek voor u automatisch beëindigd. U krijgt dan geen vergoeding voor dit onderzoek.
-                De twee deelnemers met wie u aan het onderhandelen bent, kunnen dan ook niet verder en
-                {{ if incentives }}
-                zullen daarom hun bonusbetaling niet kunnen ontvangen.
-                {{ endif }}
-                Zij zullen echter wel de basisvergoeding ontvangen.</strong>
+            Dit onderzoek wordt uitgevoerd in opdracht van de Tilburg School of Social and Behavioral Sciences en de Tilburg School of Economics and 
+            Management van Tilburg University. De onderzoekers willen weten hoe mensen coalities (samenwerkingsverbanden) aangaan en hoe ze beslissingen 
+            nemen voor zichzelf en anderen. 
         </p>
-    {{ endif }}
 
+        <p>
+            In dit onderzoek neemt u de rol aan van een transportbedrijf dat onderhandelt met twee andere mensen (die allebei andere transportbedrijven 
+            vertegenwoordigen) om een geldbedrag te verdelen. 
+            {{ if incentives }} 
+            <!-- Het geld dat in het spel wordt verdiend, wordt aan het einde van het experiment omgezet in een echte bonus in punten voor de deelnemers. -->
+            Het geld dat in het spel wordt verdiend, wordt aan het einde van het experiment omgezet in een echte geldelijke bonus voor de deelnemers.
+            {{ endif }}
+        </p>
 
-        {{ formfield player.consent label="Hierbij geef ik Centerdata toestemming om mijn antwoorden te gebruiken en aan onderzoekers ter beschikking te stellen voor wetenschappelijk, beleidsrelevant en maatschappelijk relevant onderzoek. Mijn antwoorden zijn door onderzoekers niet tot mij te herleiden."}}
+        {{ if timers }}
+        </p>
+            <strong>Belangrijk:</strong> In dit onderzoek doen drie mensen mee aan een live onderhandeling. Daarom is er een 
+            beperkte tijd om antwoorden te geven. Elke pagina moet binnen 5 minuten ingevuld worden. Dit is meer dan genoeg 
+            tijd. Op alle pagina’s met een beperkte tijd staat een timer zodat u weet dat u binnen 5 minuten moet antwoorden.
+        </p>
 
+        <p>
+            <strong class="text-danger">
+                Als u tijdens de onderhandeling niet binnen {{ timeout_time_minutes }} minuten een antwoord kunt geven dan stopt 
+                het onderzoek automatisch voor iedereen die meedoet. 
+                {{ if incentives }}
+                Als dit gebeurt, dan kan geen enkele van de deelnemers een bonusbetaling krijgen. 
+                {{ endif }}
+            </strong>
+        </p>
+        {{ endif }}
 
+        <p><strong>Duur en betaling</strong></p>
 
+        <!-- If points -->
+        <!-- <p>
+            Dit onderzoek duurt ongeveer 20 minuten. U ontvangt in ieder geval 20 punten voor deelname. U beantwoordt tijdens 
+            de onderhandeling een aantal vragen over hoe u beslissingen neemt. Soms stellen we dezelfde vragen later opnieuw 
+            om te zien of er iets veranderd is. Houd er rekening mee dat u tijdens dit onderzoek <strong>live contact hebt met 
+            twee andere deelnemers</strong>. Dit betekent dat u soms even moet wachten, bijvoorbeeld als we u koppelen aan 
+            andere deelnemers of wanneer de anderen nog even nadenken over hun beslissingen. Afhankelijk van hoe de onderhandelingen 
+            gaan kan dit iets korter of iets langer zijn. Aan het eind van de studie krijgt u de 20 punten plus een bonus die afhankelijk is 
+            van de uitkomst van uw onderhandeling.
+        </p> -->
+        <p>
+            Dit onderzoek duurt ongeveer 20 minuten. U ontvangt in ieder geval €5,00 voor deelname. U beantwoordt tijdens 
+            de onderhandeling een aantal vragen over hoe u beslissingen neemt. Soms stellen we dezelfde vragen later opnieuw 
+            om te zien of er iets veranderd is. Houd er rekening mee dat u tijdens dit onderzoek <strong>live contact hebt met 
+            twee andere deelnemers</strong>. Dit betekent dat u soms even moet wachten, bijvoorbeeld als we u koppelen aan 
+            andere deelnemers of wanneer de anderen nog even nadenken over hun beslissingen. Afhankelijk van hoe de onderhandelingen 
+            gaan kan dit iets korter of iets langer zijn. Aan het einde van de studie ontvangt u de basisvergoeding van €5,00 plus een bonus die 
+            afhankelijk is van de uitkomst van uw onderhandeling.
+        </p>
 
-<div class="row">
-    <div class="col-md-1 col-md-offset-11">
-    <button class="o-tree-btn-next btn btn-primary">Volgende</button>
-    </div>
-</div>
+        <p>
+            Als u vragen hebt over het onderzoek, neem dan contact op met Merve Timuroğulları via 
+            <a href="mailto:m.timurogullari@tilburguniversity.edu">m.timurogullari@tilburguniversity.edu</a>.        
+        </p>
+
+        <p>
+            Klik op onderstaande knop voor meer gedetailleerde informatie (vertrouwelijkheid, ethische goedkeuring, deelname, 
+            voordelen, risico's en uw rechten):
+        </p>
+        
+        <!-- Embedded button for additional consent details -->
+                
+        <button type="button" id="toggleConsentDetails">Klik hier voor de aanvullende toestemmingsgegevens</button>
+        <div id="additionalConsentDetails" style="display:none;">
+            <br>
+            <p><strong>Vertrouwelijkheid en vragen</strong></p>
+            <p>
+                Alle gegevens die van deelnemers worden verkregen, blijven anoniem. Alle informatie die over u wordt verzameld, 
+                wordt gecodeerd met een fictieve naam (pseudoniem) of initialen en nummers, bijvoorbeeld abc-123, enz. 
+                De informatie met uw identificeerbare gegevens wordt apart van de rest van uw gegevens bewaard. Ze worden 
+                opgeslagen in een bestand dat met een wachtwoord is beveiligd en alleen de onderzoekers hebben er toegang toe. 
+                Eenmaal geanonimiseerd, kunnen de gegevens beschikbaar worden gesteld aan onderzoekers via toegankelijke databases 
+                en mogelijk gebruikt worden voor nieuwe doeleinden. De gegevens worden minstens 10 jaar bewaard.
+            </p>
+            
+            <p>
+                Dit onderzoek is goedgekeurd door de Ethische Toetsingscommissie van Tilburg School of Social and Behavioral 
+                Sciences (RP1664). Als u opmerkingen of klachten heeft over dit onderzoek, kunt u contact opnemen met de 
+                Ethische Toetsingscommissie van Tilburg School of Social and Behavioral Sciences via 
+                <a href="mailto:ERB@tilburguniversity.edu">ERB@tilburguniversity.edu</a>.
+            </p>
+
+            <p><strong>Deelname, voordelen en risico's</strong></p>
+
+            <p>
+                Deelname aan dit onderzoek is volledig vrijwillig. U hebt het recht om u op elk gewenst moment terug te 
+                trekken of deelname in zijn geheel te weigeren. Als u zich wilt terugtrekken, sluit dan gewoon uw internetbrowser. 
+                Er zijn geen negatieve gevolgen als u zich terugtrekt of weigert deel te nemen. De risico's voor deelname aan 
+                dit onderzoek zijn minimaal. Het is zeer onwaarschijnlijk dat het beantwoorden van de vragen u emotioneel of 
+                anderszins beïnvloedt. U hebt in principe het recht om toegang te vragen tot uw persoonlijke gegevens en deze 
+                te corrigeren, wissen, beperken of er bezwaar tegen te maken.
+            </p>
+
+            <p>
+                Door in te stemmen met deelname aan het onderzoek gaat u vrijwillig akkoord met deelname aan dit onderzoek. 
+                Dit doet geen afbreuk aan uw recht om u op elk moment zonder opgaaf van redenen uit dit onderzoek terug te trekken.
+            </p>
+
+            <p>
+                Door in te stemmen met deelname aan het onderzoek, bevestig ik (de deelnemer) dat ik de volledige informatiebrief 
+                heb gelezen en begrepen en bevestig ik dat:
+            </p>
+    
+            <ul>
+                <li>Ik de volledige informatiebrief die bij dit onderzoek hoort heb gelezen en begrepen.</li>
+                <li>Ik voldoende tijd heb gehad om te beslissen of ik wel of niet zou deelnemen.</li>
+                <li>Ik begrijp dat deelname volledig vrijwillig is.</li>
+                <li>Ik begrijp dat de duur van het onderzoek ongeveer 20 minuten is.</li>
+                <li>Ik begrijp dat ik op elk moment kan beslissen om me terug te trekken uit het onderzoek, zonder negatieve gevolgen en zonder enige uitleg.</li>
+                <li>Ik begrijp dat ik in principe het recht heb om toegang te vragen tot mijn persoonlijke gegevens en deze te corrigeren, wissen, beperken of er bezwaar tegen te maken.</li>
+                <li>Ik weet dat mijn onderzoeksgegevens worden verwerkt zoals beschreven in de informatiebrief en dat alleen het onderzoeksteam toegang heeft tot deze gegevens.</li>
+                <li>Ik geef toestemming om mijn onderzoeksgegevens te gebruiken voor de doeleinden die staan vermeld in de informatiebrief die bij dit onderzoek hoort.</li>
+                <li>Ik geef toestemming om mijn onderzoeksgegevens gedurende 10 jaar te bewaren.</li>
+            </ul>
+        </div>    
+
+        <!-- Agreement to participate -->
+
+        {{ formfield player.consent label="<b>Ik heb de bovenstaande informatie gelezen en wil meedoen aan de studie:</b>"}}
+
+        <div class="row">
+            <div class="col-md-1 col-md-offset-11">
+            <button class="o-tree-btn-next btn btn-primary">Volgende</button>
+            </div>
+        </div>
 
     </div>
 
     <div id="warning">
-
-    <p class="text-danger">
-        Beste deelnemer,<br><br>
-        Dit experiment werkt niet op Internet Explorer en Microsoft Edge. Gebruik een andere browser, zoals google chrome of firefox om verder te gaan.    </p>
+        <p class="text-danger">
+            Beste deelnemer,<br><br>
+            Dit experiment werkt niet op Internet Explorer en Microsoft Edge. Gebruik een andere browser, zoals google chrome 
+            of firefox om verder te gaan.   
+        </p>
     </div>
-
 {{ endblock }}
 
 {{ block scripts }}
-
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        $(document).ready(function () {
+            var informed_consent = $("#informed_consent");
+            var warning = $("#warning");
+            warning.hide();
 
-    $(document).ready(function () {
+            if (navigator.appName == 'Microsoft Internet Explorer' || !!(navigator.userAgent.match(/Trident/) || navigator.userAgent.match(/rv:11/)) || (typeof $.browser !== "undefined" && $.browser.msie == 1)) {
+                informed_consent.hide();
+                warning.show();
+            }
 
-        var informed_consent = $("#informed_consent");
-        var warning = $("#warning");
-        warning.hide();
+            if (window.navigator.userAgent.indexOf("Edge") > -1) {
+                informed_consent.hide();
+                warning.show();
+            }
 
-    if (navigator.appName == 'Microsoft Internet Explorer' ||  !!(navigator.userAgent.match(/Trident/) || navigator.userAgent.match(/rv:11/)) || (typeof $.browser !== "undefined" && $.browser.msie == 1))
-{
-  informed_consent.hide();
-  warning.show();
-}
-
-    if (window.navigator.userAgent.indexOf("Edge") > -1)
-    {informed_consent.hide();
-  warning.show();}
-    })
-
-</script>
-
+            // Toggle the visibility of additional consent details when the button is clicked
+            $("#toggleConsentDetails").on('click', function () {
+                $("#additionalConsentDetails").toggle(); 
+            });
+        });
+    </script>
 {{ endblock }}

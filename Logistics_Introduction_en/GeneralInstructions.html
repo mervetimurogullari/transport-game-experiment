@@ -1,45 +1,61 @@
+{{ load static }}
+
 {{ block title }}
-The negotiation situation
+    The negotiation situation
 {{ endblock }}
 
 {{ block content }}
+    <p>
+        In the transport sector, companies can often save money (and reduce CO₂ emissions) by collaborating in the transport 
+        of cargo. However, such collaboration requires negotiation between companies on who will collaborate with who and on 
+        how to divide the earnings of the collaboration. We study such negotiations in this experiment.
+    </p> 
+    
+    </p>
+        You and two other participants each represent a different transport company. The three companies transport a total of 
+        9 tons of cargo each day from Amsterdam to Paris. Each company uses a truck sized to its own freight needs.
+    </p>
 
-        <p>
-            You and two other individuals participating in this study each work for a different transport company. We will indicate later which company you work for. At this time, we want to indicate first what the situation is. Please read these instructions carefully.
-			{{ if comprehension_check == True }}
-            At the end of the instructions, we will ask you a few questions about it.
-            {{ endif }}
-        </p>
+    <p>
+        <ul>
+            <li><strong>Company A:</strong> The market leader, transporting 4 tons of cargo every day.</li> 
+            <img src="{{ static 'global/images/company_a.png' }}" style="height: 1.66cm; width: 5.95cm;">
 
-        <p>
-            The three companies transport a total of 9 tons of cargo each day from Amsterdam to Paris.
-            Company A is the market leader and transports 4 tons every day. Company B is a medium-sized company and transports 3 tons every day. Company C is a relatively small company and transports 2 tons every day. Each company uses a truck just big enough to carry its own freight. So Company A uses a truck with a capacity of 4 tons, Company B uses a truck with a capacity of 3 tons, and Company C uses a truck with a capacity of 2 tons.
-      </p>
+            <li><strong>Company B:</strong> A medium-sized company, transporting 3 tons of cargo every day.</li>
+            <img src="{{ static 'global/images/company_b.png' }}" style="height: 1.69cm; width: 4.95cm;">
 
-        <p>
-            Every company also knows that there is a type of truck that is much larger and can carry up to 9 tons of cargo. However, this type of truck is only allowed on the road if it holds at least 5 tons. This means that none of the companies individually have enough cargo to use this type of truck. They can, of course, form a coalition and then use this large truck.
-        </p>
+            <li><strong>Company C:</strong> A smaller company, transporting 2 tons of cargo every day.</li>
+            <img src="{{ static 'global/images/company_c.png' }}" style="height: 1.68cm; width: 3.95cm;">
+        </ul>
+    </p>
 
-        <p>
-            Recently, all three companies were approached with a very attractive proposal. There is a company in Paris that is eager for the big truck. This company is offering a premium of 9000 euros if the big truck comes to Paris. So the question is (1) which company will partner with which company, and (2) how do the companies divide the 9000 euro premium among themselves?
-        </p>
+    <p>
+        A larger truck is available that can carry up to 9 tons. This truck, however, is only allowed on the road if it carries 
+        at least 5 tons. This means that none of the companies individually have enough cargo to use this larger truck, 
+        they need to form a coalition to do so.  
+    </p>
 
+    <p>
+        <strong>A very attractive proposal has arisen.</strong> There is a company in Paris that offers a 9000-euro premium if 
+        the large truck is brought to Paris. This makes a coalition among companies to share the large truck more attractive.  
+        Any combination of companies carrying at least 5 tons of freight can use the large truck and thus claim the premium 
+        of 9000 euros. The figure below  summarizes the negotiation situation.
+    </p>   
 
-        <p>
-            However, there are some conditions:
-        </p>
-        <p>
-            <strong>1)</strong> A company must put its entire cargo in one truck. Thus, a company cannot put part of its freight in the small truck and another part in the big truck.
-        </p>
-        <p>
-            <strong>2)</strong> The 9000 euro bonus is paid only to the companies that use the big truck.</p>
-        <p>
-            So, any combination of companies carrying at least 5 tons of freight can use the big truck and thus claim the premium of 9000 euros.
-        </p>
+    <img src="{{ static 'global/images/transportgame_english.png' }}" style="height: 11.6cm; width: 15.28cm;">
+        
+    <p> 
+        The questions are:
+        <ol type="1">
+            <li> Which companies will collaborate?</li>
+            <li> How will the 9000 euros bonus be distributed?</li>
+        </ol>
+    </p>
 
-        <p>
-            Now click on “Next”
-        </p>
+    <p>
+        Now click on “Next”
+    </p>
 
-{{ next_button }}
+    {{ next_button }}
+    
 {{ endblock }}

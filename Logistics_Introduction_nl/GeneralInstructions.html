@@ -1,46 +1,65 @@
+{{ load static }}
+
 {{ block title }}
-    De onderhandelsituatie
+    De onderhandeling
 {{ endblock }}
 
 {{ block content }}
+    <p>
+        In de transportsector kunnen bedrijven vaak geld besparen (en CO₂-uitstoot verminderen) door samen te werken bij het 
+        vervoeren van vracht. Om te kunnen samenwerken moeten bedrijven onderhandelen over wie met wie gaat samenwerken en 
+        over hoe de winst van de samenwerking wordt verdeeld. In dit onderzoek doet u mee aan zo’n onderhandeling.
+    </p> 
 
-        <p>
-            U en twee andere personen die meedoen aan dit onderzoek werken ieder voor een ander transportbedrijf. We zullen straks aangeven voor welk bedrijf u werkt. Op dit moment willen we eerst aangeven wat de situatie is. Lees deze instructies goed door.
-			{{ if comprehension_check == True }}
-                Aan het einde van de instructie stellen we er een paar vragen over.
-            {{ endif }}
-        </p>
+    </p>
+        U en twee andere deelnemers vertegenwoordigen allemaal een ander transportbedrijf. Deze drie bedrijven vervoeren samen 
+        9 ton vracht per dag van Amsterdam naar Parijs. Elk bedrijf gebruikt een eigen vrachtwagen, afhankelijk van wat ze 
+        nodig hebben.
+    </p>
 
-        <p>
-            De drie bedrijven vervoeren iedere dag in totaal 9 ton vracht van Amsterdam naar Parijs.
-            Bedrijf A is marktleider en vervoert iedere dag 4 ton. Bedrijf B is een middelgroot bedrijf en vervoert iedere dag 3 ton. Bedrijf C is een relatief klein bedrijf en vervoert iedere dag 2 ton. Ieder bedrijf gebruikt een vrachtwagen die precies groot genoeg is om de eigen vracht te vervoeren. Bedrijf A gebruikt dus een vrachtwagen met een capaciteit van 4 ton, Bedrijf B een vrachtwagen met een capaciteit van 3 ton, en Bedrijf C een vrachtwagen met een capaciteit van 2 ton.
-        </p>
+    <p>
+        <ul>
+            <li><strong>Bedrijf A:</strong> De marktleider, die elke dag 4 ton vracht vervoert.</li> 
+            <img src="{{ static 'global/images/company_a.png' }}" style="height: 1.66cm; width: 5.95cm;">
 
-        <p>
-            Ieder bedrijf weet ook dat er een type vrachtwagen bestaat dat veel groter is en maximaal 9 ton vracht kan vervoeren. Dit type vrachtwagen mag echter alleen de weg op als er minimaal 5 ton in zit. Dit betekent dat geen van de bedrijven individueel voldoende vracht heeft om dit type vrachtwagen te gebruiken. Ze kunnen natuurlijk wel een coalitie sluiten en dan deze grote vrachtwagen inzetten.
-        </p>
+            <li><strong>Bedrijf B:</strong> Een middelgroot bedrijf, dat elke dag 3 ton vracht vervoert.</li>
+            <img src="{{ static 'global/images/company_b.png' }}" style="height: 1.69cm; width: 4.95cm;">
 
-        <p>
-            Pasgeleden zijn alle drie de bedrijven benaderd met een zeer aantrekkelijk voorstel. Er is een bedrijf in Parijs dat staat te springen om de grote vrachtwagen. Dit bedrijf biedt een premie aan van 9000 euro als de grote vrachtwagen naar Parijs komt. De vraag is dus (1) welk bedrijf gaat met welk bedrijf samenwerken, en (2) hoe verdelen de bedrijven onderling de premie van 9000 euro?
-        </p>
+            <li><strong>Bedrijf C:</strong> Een kleiner bedrijf, dat elke dag 2 ton vracht vervoert.</li>
+            <img src="{{ static 'global/images/company_c.png' }}" style="height: 1.68cm; width: 3.95cm;">
+        </ul>
+    </p>
 
+    <p>
+        Ze kunnen ook een veel grotere vrachtwagen gebruiken die wel 9 ton kan vervoeren. Maar, deze vrachtwagen mag alleen 
+        de weg op als hij minstens 5 ton vervoert. Dit betekent dat geen van de bedrijven genoeg vracht heeft om deze grotere 
+        vrachtwagen alleen te gebruiken. Ze moeten samenwerken om dit te doen. 
+    </p> 
 
-        <p>
-             Er is wel een aantal voorwaarden:
-        </p>
-        <p>
-            <strong>1)</strong> Een bedrijf moet zijn hele vracht in één vrachtwagen stoppen. Een bedrijf kan dus niet een deel van zijn vracht in de kleine vrachtwagen stoppen en een ander deel in de grote vrachtwagen.
-        </p>
-        <p>
-            <strong>2)</strong> De bonus van 9000 euro wordt alleen uitbetaald aan de bedrijven die gebruik maken van de grote vrachtwagen.
-        </p>
-        <p>
-            Dus, iedere combinatie van bedrijven die minimaal 5 ton vracht vervoert kan gebruik maken van de grote vrachtwagen en daarmee aanspraak maken op de premie van 9000 euro.
-        </p>
+    <p>
+        <strong>Er is een aantrekkelijke kans.</strong> Een bedrijf in Parijs geeft een premie van 9000 euro als de 
+        grote vrachtwagen van Amsterdam naar Parijs wordt gebracht. Hierdoor is het aantrekkelijk om samen te werken en de 
+        grote vrachtwagen te delen. Elke combinatie van bedrijven die minstens 5 ton vracht vervoert, kan de grote vrachtwagen 
+        gebruiken en zo gezamenlijk de premie van 9000 euro krijgen. Hieronder ziet u een plaatje waarin alles nog eens staat 
+        beschreven.
+    </p>
 
-        <p>
-            Klik nu op “Volgende”
-        </p>
+    <img src="{{ static 'global/images/transportgamedutch.png' }}" style="height: 11.6cm; width: 15.28cm;">
+     
+    <br><br>
+
+    <p> 
+        De belangrijke vragen zijn:
+        <ol type="1">
+            <li> Welke bedrijven gaan samenwerken?</li>
+            <li> Hoe wordt de premie van 9000 euro verdeeld?</li>
+        </ol>
+    </p>
+
+    <p>
+        Klik nu op “Volgende”
+    </p>
+
 <div class="row">
     <div class="col-md-1 col-md-offset-11">
     <button class="o-tree-btn-next btn btn-primary">Volgende</button>

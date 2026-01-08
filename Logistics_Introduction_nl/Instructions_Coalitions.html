@@ -1,72 +1,56 @@
+{{ load static }}
+
 {{ block title }}
-    De onderhandelsituatie
+    Coalitievorming
 {{ endblock }}
 
 {{ block content }}
+    <p>
+        Er is een premie van 9000 euro beschikbaar voor bedrijven die een coalitie (een samenwerking) vormen om samen de 
+        grotere vrachtwagen te gebruiken. Wij leggen hier in detail uit welke coalities gevormd kunnen worden.
+    </p>
 
+    <p>
+        Als er een coalitie gevormd wordt, moeten de deelnemers aan de coalitie beslissen hoe zij de 9000 euro verdelen. 
+        Deelnemers die niet bij de coalitie horen moeten hun eigen vrachtwagen gebruiken en krijgen dus ook geen deel van 
+        de premie. 
+    </p>
 
-        <p>
-        Nog even samengevat. De bedrijven vervoeren iedere dag 9 ton vracht van Amsterdam naar Parijs.
-        </p>
-        <p>
-            Bedrijf A is een groot bedrijf dat dagelijks 4 ton naar Parijs vervoert. Bedrijf B is een middelgroot bedrijf dat dagelijks 3 ton naar Parijs vervoert. Bedrijf C is een klein bedrijf dat dagelijks 2 ton naar Parijs vervoert. Er is een kans om een bonus te verdienen van 9000 euro. Deze bonus wordt uitbetaald als de grote vrachtwagen gebruikt wordt. Dit betekent dat iedere coalitie van bedrijven die minimaal 5 ton vracht aanbiedt aanspraak kan maken op de bonus van 9000 euro.
-        </p>
+    <p>
+        <strong>Hieronder staan alle mogelijkheden voor een coalitie die voldoende is om de premie te krijgen:</strong>  
+        
+        <!-- unordered list -->
+        <ul>
+            {{ if 'AB' in possible_coalitions_all }}
+            <li><strong class="text-success">Bedrijf A en Bedrijf B kunnen een AB-coalitie vormen die (4 + 3) 7 ton vracht vervoert</strong></li>
+            <img src="{{ static 'global/images/company_ab.png' }}" style="height: 3.47cm; width: 5.98cm;">
+            {{ endif }}<br><br>
 
-        <p>
-            Dit zijn de mogelijkheden:
-			
-            <ul>
-                {{ if 'AB' in possible_coalitions_all }}
-                <li><strong class="text-success">Bedrijf A kan met Bedrijf B een AB-coalitie sluiten</strong>.
-                    Er wordt dan (4 + 3 =) <strong class="text-success">{{subsession.resources_AB}} ton </strong> vracht met de grote vrachtwagen vervoerd.
-                    De bedrijven A en B moeten dan onderling bepalen hoe ze de {{total_payoff}} euro verdelen.
-					Bedrijf C blijft gebruik maken van de eigen truck en krijgt geen deel van de bonus.
-                {{ endif }}
-        </p>
-        <p>
-                {{ if 'AC' in possible_coalitions_all }}
-                <strong class="text-success">Bedrijf A kan met Bedrijf C een AC-coalitie sluiten</strong>.
-                    Er wordt dan (4 + 2 =) <strong class="text-success">{{subsession.resources_AC}} ton </strong> vracht met de grote vrachtwagen vervoerd.
-                    De bedrijven A en C moeten dan onderling bepalen hoe ze de {{total_payoff}} euro verdelen.
-					Bedrijf B blijft gebruik maken van de eigen truck en krijgt geen deel van de bonus.
-                {{ endif }}
-        </p>
-        <p>
-                {{ if 'BC' in possible_coalitions_all }}
-                <strong class="text-success">Bedrijf B kan met Bedrijf C een BC-coalitie sluiten</strong>.
-                    Er wordt dan (3 + 2 =) <strong class="text-success">{{subsession.resources_BC}} ton </strong> vracht met de grote vrachtwagen vervoerd.
-                    De bedrijven B en C moeten dan onderling bepalen hoe ze de {{total_payoff}} euro verdelen.
-					Bedrijf A blijft gebruik maken van de eigen truck en krijgt geen deel van de bonus.
-                {{ endif }}
-        </p>
-        <p>
-                {{ if 'ABC' in possible_coalitions_all }}
-                <strong class="text-success">Bedrijf A, Bedrijf B en Bedrijf C kunnen ook een ABC-coalitie sluiten</strong>.
-                    Er wordt dan (4 + 3 + 2 =) <strong class="text-success">{{subsession.resources_ABC}} ton </strong> vracht met de grote vrachtwagen vervoerd.
-                    De bedrijven A, B en C moeten dan onderling bepalen hoe ze de {{total_payoff}} euro verdelen.
-                {{ endif }}
-            </ul>
-        </p>
+            {{ if 'AC' in possible_coalitions_all }}
+            <li><strong class="text-success">Bedrijf A en Bedrijf C kunnen een AC-coalitie vormen die (4 + 2) 6 ton vracht vervoert</strong></li>
+            <img src="{{ static 'global/images/company_ac.png' }}" style="height: 3.23cm; width: 5.93cm;">
+            {{ endif }}<br><br>
 
+            {{ if 'BC' in possible_coalitions_all }}
+            <li><strong class="text-success">Bedrijf B en bedrijf C kunnen een BC-coalitie vormen die (3 + 2) 5 ton vracht vervoert</strong></li>
+            <img src="{{ static 'global/images/company_bc.png' }}" style="height: 3.54cm; width: 5.93cm;">
+            {{ endif }}<br><br>
 
-		<p>
-            De onderhandeling is dus:
-        </p>
-		<p>
-            1) welke partner(s) zoekt ieder bedrijf uit om mee samen te werken?
-        </p>
-		<p>
-            2) hoe verdelen de leden van een coalitie de 9000 euro?
-        </p>
+            {{ if 'ABC' in possible_coalitions_all }}
+            <li><strong class="text-success">Bedrijf A, Bedrijf B en Bedrijf C kunnen een ABC-coalitie vormen die (4 + 3 + 2) 9 ton vracht vervoert</strong></li>
+            <img src="{{ static 'global/images/company_abc.png' }}" style="height: 5.25cm; width: 5.98cm;">
+            {{ endif }}
+        </ul>
+    </p>
+    
+    <p>
+        <strong>Let op:</strong> U moet ervoor zorgen dat u de best mogelijke deal krijgt voor uw eigen bedrijf. 
+        Welk bedrijf u vertegenwoordigt wordt willekeurig bepaald als alle deelnemers aan het onderzoek er zijn.
+    </p>
 
-		<p>
-            Omdat de <strong>bedrijven concurrenten</strong> van elkaar zijn, moet u er wel voor zorgen dat u een zo goed mogelijke deal voor uw eigen bedrijf weet te sluiten.
-            Welk bedrijf u vertegenwoordigt wordt bepaald door middel van <strong>een willekeurige trekking. Dit doen we op het moment dat u en de andere deelnemers aan elkaar zijn gekoppeld.</strong>
-        </p>
-
-		<p>
-            Klik nu op “Volgende”
-        </p>
+    <p>
+        Klik nu op “Volgende”
+    </p>
 
 <div class="row">
     <div class="col-md-1 col-md-offset-11">

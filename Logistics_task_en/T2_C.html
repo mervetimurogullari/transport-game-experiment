@@ -1,0 +1,203 @@
+{{ load otree static }}
+{{ load static }}
+
+{{ block title }}
+    Questions before the negotiation
+{{ endblock }}
+
+{{ block content }}
+
+{{ if player.group.is_experimental }}
+    <p>
+        Now you have received additional information about the other players and companies in the game. 
+        You know which companies they represent and what company you yourself represent. 
+        You also know what answers they gave to the survey about distributing outcomes to the self or others. 
+    </p>
+
+{{ else }}
+    <p>
+        Now you have received additional information about the other players and companies in the game. 
+        You know which companies they represent and what company you yourself represent. 
+    </p>
+{{ endif }}
+
+<p>
+    For both other players, please indicate for each of the statements below to what extent you agree or disagree 
+    that they describe the respective participant. What do you expect from these participants?
+</p>
+
+<p>
+    Note: If you are using a phone, we recommend holding it horizontally for a better view.
+</p>
+
+<h3>Company A, large company</h3>
+<img src="{{ static 'global/images/company_a.png' }}" style="height: 1.66cm; width: 5.95cm;">
+
+{{ if player.group.is_experimental }}
+    {{ for other_player in player.get_others_in_group }}
+        {{ if other_player.position == 'A' }}
+            <img src="data:image/png;base64,{{ other_player.gauge_plot_svo }}" />
+        {{ endif }}
+    {{ endfor }}
+{{ endif }}
+
+<p>
+    What do you expect from the participant representing Company A?
+</p>
+
+<table class="table">
+    <tr>
+        <th style="width: 40%;"><center>Statement</center></th>
+        <th style="width: 10%;"><center>Strongly Disagree <br> 1</center></th>
+        <th style="width: 10%;"><center>Disagree<br>2</center></th>
+        <th style="width: 10%;"><center>Neither Agree nor Disagree<br>3</center></th>
+        <th style="width: 10%;"><center>Agree<br>4</center></th>
+        <th style="width: 10%;"><center>Strongly Agree <br> 5</center></th>
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_1_C_to_A.label }}</td>
+        {{ for choice in form.trust_pre_1_C_to_A }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_2_C_to_A.label }}</td>
+        {{ for choice in form.trust_pre_2_C_to_A }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_3_C_to_A.label }}</td>
+        {{ for choice in form.trust_pre_3_C_to_A }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_4_C_to_A.label }}</td>
+        {{ for choice in form.trust_pre_4_C_to_A }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_5_C_to_A.label }}</td>
+        {{ for choice in form.trust_pre_5_C_to_A }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_6_C_to_A.label }}</td>
+        {{ for choice in form.trust_pre_6_C_to_A }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_7_C_to_A.label }}</td>
+        {{ for choice in form.trust_pre_7_C_to_A }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_8_C_to_A.label }}</td>
+        {{ for choice in form.trust_pre_8_C_to_A }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+</table>
+
+<h3>Company B, medium-sized company</h3>
+<img src="{{ static 'global/images/company_b.png' }}" style="height: 1.69cm; width: 4.95cm;">
+
+{{ if player.group.is_experimental }}
+    {{ for other_player in player.get_others_in_group }}
+        {{ if other_player.position == 'B' }}
+            <img src="data:image/png;base64,{{ other_player.gauge_plot_svo }}" />
+        {{ endif }}
+    {{ endfor }}
+{{ endif }}
+
+<p>
+    What do you expect from the participant representing Company B?
+</p>
+
+<table class="table">
+    <tr>
+        <th style="width: 40%;"><center>Statement</center></th>
+        <th style="width: 10%;"><center>Strongly Disagree <br> 1</center></th>
+        <th style="width: 10%;"><center>Disagree<br>2</center></th>
+        <th style="width: 10%;"><center>Neither Agree nor Disagree<br>3</center></th>
+        <th style="width: 10%;"><center>Agree<br>4</center></th>
+        <th style="width: 10%;"><center>Strongly Agree <br> 5</center></th>
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_1_C_to_B.label }}</td>
+        {{ for choice in form.trust_pre_1_C_to_B }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_2_C_to_B.label }}</td>
+        {{ for choice in form.trust_pre_2_C_to_B }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_3_C_to_B.label }}</td>
+        {{ for choice in form.trust_pre_3_C_to_B }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_4_C_to_B.label }}</td>
+        {{ for choice in form.trust_pre_4_C_to_B }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_5_C_to_B.label }}</td>
+        {{ for choice in form.trust_pre_5_C_to_B }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_6_C_to_B.label }}</td>
+        {{ for choice in form.trust_pre_6_C_to_B }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_7_C_to_B.label }}</td>
+        {{ for choice in form.trust_pre_7_C_to_B }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+    <tr>
+        <td style="text-align: left;">{{ form.trust_pre_8_C_to_B.label }}</td>
+        {{ for choice in form.trust_pre_8_C_to_B }}
+            <td><center>{{ choice }}</center></td>
+        {{ endfor }}
+    </tr>
+</table>
+
+    {{ next_button }}
+    
+{{ endblock }}
+
+{{ block scripts }}
+<style>
+    .table {
+        table-layout: fixed;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    .table th, .table td {
+        text-align: center;
+        padding: 8px;
+    }
+    .table td {
+        text-align: left;
+    }
+    th[rowspan="2"] {
+        vertical-align: middle;
+    }
+</style>
+{{ endblock }}

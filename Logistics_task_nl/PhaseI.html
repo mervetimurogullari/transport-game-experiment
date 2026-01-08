@@ -1,5 +1,5 @@
 {{ block title }}
-    Fase 1 van Ronde {{ player.round_number }}: Maak een coalitievoorstel
+    Stap 1 van ronde {{ player.round_number }}: Doe een voorstel 
 {{ endblock }}
 
 {{ block styles }}
@@ -12,41 +12,68 @@
         ul#allocate_to_players div.controls,
         ul#allocate_to_players div.input-group {
             display: inline-block;
-
         }
     </style>
-
 {{ endblock }}
 
-
 {{ block content }}
-
-
     <div id="bargain">
-
         <p>
-            U onderhandelt namens <strong class="text-info"> Bedrijf {{ player.position }}</strong>.
-            Dat betekent dat u <strong class="text-info">{{ player.resources }} ton </strong> vracht vervoert naar Parijs.
-        </p>
-
-        <p>Uw concurrenten vertegenwoordigen
-            {{ for p in player.get_others_in_group }}
-                <strong class="text-success"><br>- Bedrijf  {{ p.position }}</strong>
-                (vervoert <strong class="text-success">{{ p.resources }} ton</strong>)
-            {{ endfor }}
-        </p>
-        <p>
-            Er moet minimaal {{ decision_point }} ton worden aangeboden om de grote vrachtwagen te laten rijden en dus een bonus van {{ total_payoff }} euro te verkrijgen.
-        </p>
-
-         <p>
-            Geef nu aan (a) met wie u een coalitie wilt vormen en ook (b) hoe u de {{ total_payoff }} euro over de leden van de coalitie wilt verdelen.
+            Er is tenminste {{ decision_point }} ton nodig om de grote vrachtwagen te gebruiken en zo de premie 
+            bonus van {{ total_payoff }} euro te krijgen. De drie bedrijven in deze onderhandeling zijn:
         </p>
 
         <p>
-            Ik wil de volgende coalitie vormen:
+            <ul>
+                {{ for other_player in player.group.get_players }}
+                    {{ if other_player.position == 'A' }}
+                        <li><strong class="text-success">Bedrijf A</strong>
+                            {{ if player.position == 'A' }}
+                            <strong class="text-success">(Dit bent u)</strong>
+                            {{ endif }}
+                        </li> 
+
+                        <img src="{{ static 'global/images/company_a.png' }}" style="height: 1.66cm; width: 5.95cm;">
+                        {{ if player.group.is_experimental }}
+                        <img src="data:image/png;base64,{{ other_player.gauge_plot_svo }}" /><br>
+                        {{ endif }}
+                    {{ endif }}
+
+                    {{ if other_player.position == 'B' }}
+                        <li><strong class="text-success">Bedrijf B</strong>
+                            {{ if player.position == 'B' }}
+                            <strong class="text-success">(Dit bent u)</strong>
+                            {{ endif }}
+                        </li>
+                        <img src="{{ static 'global/images/company_b.png' }}" style="height: 1.69cm; width: 4.95cm;">
+                        {{ if player.group.is_experimental }}
+                        <img src="data:image/png;base64,{{ other_player.gauge_plot_svo }}" /><br>
+                        {{ endif }}
+                    {{ endif }}
+
+                    {{ if other_player.position == 'C' }}
+                        <li><strong class="text-success">Bedrijf C</strong>
+                            {{ if player.position == 'C' }}
+                            <strong class="text-success">(Dit bent u)</strong>
+                            {{ endif }}
+                        </li>
+
+                        <img src="{{ static 'global/images/company_c.png' }}" style="height: 1.68cm; width: 3.95cm;">
+                        {{ if player.group.is_experimental }}
+                        <img src="data:image/png;base64,{{ other_player.gauge_plot_svo }}" /><br>
+                        {{ endif }}
+                    {{ endif }}
+                {{ endfor }}
+            </ul>
         </p>
 
+        <p>
+            Kies welke coalitie u wilt voorstellen en hoe de {{ total_payoff }} euro onder de deelnemers moet worden verdeeld.
+        </p>
+
+        <p>
+            <strong>Dit zijn uw coalitie opties:</strong>
+        </p>
 
         {{ if player.position == 'A' }}
             <ul>
@@ -54,14 +81,7 @@
                     <li>
                         <input data-desc="{{ coalition }}" type="radio" name="proposed_coalition"
                                value="{{ coalition }}"
-                               required> {{ coalition }}-coalitie
-                        {{ if coalition == 'AB' }}
-                        (met Bedrijf B die {{ resources_player_B }} ton vracht vervoert)
-                        {{ elif coalition == 'AC' }}
-                        (met Bedrijf C die {{ resources_player_C }} ton vracht vervoert)
-                        {{ elif coalition == 'ABC' }}
-                        (met Bedrijf B die {{ resources_player_B }} ton vracht vervoert en Bedrijf C die {{ resources_player_C }} ton vracht vervoert)
-                        {{ endif }}
+                               required> {{ coalition }}-coalitie 
                     </li>
                 {{ endfor }}
             </ul>
@@ -72,14 +92,7 @@
                     <li>
                         <input data-desc="{{ coalition }}" type="radio" name="proposed_coalition"
                                value="{{ coalition }}"
-                               required> {{ coalition }}-coalitie
-                        {{ if coalition == 'AB' }}
-                        (met Bedrijf A die {{ resources_player_A }} ton vracht vervoert)
-                        {{ elif coalition == 'BC' }}
-                        (met Bedrijf C die {{ resources_player_C }} ton vracht vervoert)
-                        {{ elif coalition == 'ABC' }}
-                        (met Bedrijf A die {{ resources_player_A }} ton vracht vervoert en Bedrijf C die {{ resources_player_C }} ton vracht vervoert)
-                        {{ endif }}
+                               required> {{ coalition }}-coalitie 
                     </li>
                 {{ endfor }}
             </ul>
@@ -90,62 +103,50 @@
                     <li>
                         <input data-desc="{{ coalition }}" type="radio" name="proposed_coalition"
                                value="{{ coalition }}"
-                               required> {{ coalition }}-coalitie
-                        {{ if coalition == 'AC' }}
-                        (met Bedrijf A die {{ resources_player_A }} ton vracht vervoert)
-                        {{ elif coalition == 'BC' }}
-                        (met Bedrijf B die {{ resources_player_B }} ton vracht vervoert)
-                        {{ elif coalition == 'ABC' }}
-                        (met Bedrijf A die {{ resources_player_A }} ton vracht vervoert en Bedrijf B die {{ resources_player_B }} ton vracht vervoert)
-                        {{ endif }}
+                               required> {{ coalition }}-coalitie 
                     </li>
                 {{ endfor }}
             </ul>
         {{ endif }}
 
-
-      <p id="total-alert" class="alert alert-warning text-normal" style="display:none">
-          De premie telt niet op tot {{ total_payoff }} euro. Vul de getallen opnieuw in.
+        <p id="total-alert" class="alert alert-warning text-normal" style="display:none">
+            De premie telt niet op tot {{ total_payoff }} euro. Vul de getallen opnieuw in.
         </p>
 
         <p id="emptyfield-alert" class="alert alert-warning text-normal" style="display:none">
-            U hebt geen geldig getal in één van de vakjes ingevoerd. Voer a.u.b. een geldig getal tussen 0 en {{ total_payoff }} in.
+            U hebt geen geldig getal in één van de vakjes ingevoerd. Voer alsjeblieft een geldig getal tussen 0 en {{ total_payoff }} in. 
         </p>
 
-
+        <!-- below section where they allocate the payoff -->
         <ul id="allocate_to_players">
-
-        <p id="allocate_to_players_text">
-            Geef aan hoe u de premie van {{ total_payoff }} euro wilt verdelen: hoeveel geld krijgt uw eigen bedrijf en hoeveel krijgt een ander bedrijf?
-            (Let op: dit moet optellen tot {{ total_payoff }}).
-        </p>
+            <p id="allocate_to_players_text">
+                Bepaal hoe u de {{ total_payoff }} euro wilt verdelen. Het totaal moet opgeteld {{ total_payoff }} euro zijn.
+            </p>
 
             <li class="{{ if player.position == 'A' }}you{{ endif }}" id="allocate_to_player_A">
                 Bedrijf <strong class="text-success">A</strong>
-                (vervoert {{ resources_player_A }} ton)
                 {{ if player.position == 'A' }}
-                <small class="text-info">(Dit bent u)</small>{{ endif }}
+                    <small class="text-info">(Dit bent u)</small>
+                {{ endif }}
                 {{ formfield player.allocate_to_player_A label='€' }}
-
             </li>
+
             <li class="{{ if player.position == 'B' }}you{{ endif }}" id="allocate_to_player_B">
                 Bedrijf <strong class="text-success">B</strong>
-                (vervoert {{ resources_player_B }} ton)
                 {{ if player.position == 'B' }}
-                <small class="text-info">(Dit bent u)</small>{{ endif }}
+                    <small class="text-info">(Dit bent u)</small>
+                {{ endif }}
                 {{ formfield player.allocate_to_player_B label='€' }}
-
             </li>
+
             <li class="{{ if player.position == 'C' }}you{{ endif }}" id="allocate_to_player_C">
                 Bedrijf <strong class="text-success">C</strong>
-                (vervoert {{ resources_player_C }} ton)
                 {{ if player.position == 'C' }}
-                <small class="text-info">(Dit bent u)</small>{{ endif }}
+                    <small class="text-info">(Dit bent u)</small>
+                {{ endif }}
                 {{ formfield player.allocate_to_player_C label='€' }}
             </li>
         </ul>
-
-
 
         <div class="row">
             <div class="col-md-1 col-md-offset-11">
@@ -157,12 +158,9 @@
 
     </div> <!-- bargain -->
 
-
     <div id="confirm" style="display: none;">
-
-
         <p>
-            U hebt het volgende bod gedaan:
+            U hebt het volgende voorstel gedaan:
         </p>
 
         <p>
@@ -170,14 +168,12 @@
         </p>
 
         <div class="well">
-            <p>Weet u zeker dat u dit bod wilt doen?</p>
+            <p>Weet u zeker dat u dit voorstel wilt doen?</p>
         </div>
         <ul id="confirmation">
             <li><input type="radio" name="confirmation" value="yes" required="" disabled> Ja</li>
             <li><input type="radio" name="confirmation" value="no" required="" disabled> Nee</li>
         </ul>
-
-
 
         <div class="row">
             <div class="col-md-1 col-md-offset-11">
@@ -186,9 +182,7 @@
                 </button>
             </div>
         </div>
-
     </div>
-
 {{ endblock }}
 
 {{ block scripts }}
@@ -212,7 +206,6 @@
             allocate_B.hide();
             allocate_C.hide();
             text.hide();
-
 
             function totalOffered() {
                 var total = 0;
@@ -262,8 +255,6 @@
                     else if (coalition == 'ABC'){
                         desc = "Een ABC-coalitie tussen uw bedrijf en Bedrijf A en Bedrijf B, waarbij u " + $("#allocate_to_players li.you input").val() + " euro, Bedrijf A " + $("#allocate_to_player_A input").val() + " euro" +', en Bedrijf B ' + $("#allocate_to_player_B input").val() + " euro krijgt"}
                     }
-
-
 
                 $("#offer-desc").text(desc);
             }
@@ -327,8 +318,6 @@
                 }
                 return false;
     });
-
-
 
 
             $("button#real-submit").click(function (evt) {

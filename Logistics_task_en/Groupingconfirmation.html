@@ -1,18 +1,22 @@
 {{ block title }}
-    It worked! You have been matched with two other participants.
+    You have now been matched with two other participants.
 {{ endblock }}
 
 {{ block content }}
-        <p>
-We will now randomly assign each of you to the three transport companies. So we will now determine whether you represent Company A (the large company that transports 4 tons), Company B (the medium-sized company that transports 3 tons) or Company C (the smallest company that transports 2 tons). Throughout the experiment, you will continue to represent the same company.
-        </p>
-        <p>
-The negotiation will now begin. To prevent you or others from waiting, you will see a timer ({{ timeout_time_minutes }}0 minutes long) at the top of the screen to remind you and encourage you to complete each page as soon as possible.
-        </p>
-        <p>
-Now click on "Next"
-        </p>
+    <p>
+        The first thing that will happen is that you will now be randomly assigned by the computer to represent one of the 
+        three transport companies. You will represent one of these companies for the remainder of the study:
+        <ul>
+            <li>Company A, the large company, transports 4 tons.</li> 
+            <li>Company B, medium-sized company, transports 3 tons.</li> 
+            <li>Company C, the small company, transports 2 tons.</li> 
+        </ul>
+    </p>
+    
+    <p>
+        Now click on "Next"
+    </p>
 
-{{ next_button }}
-
+    {{ next_button }}
+    
 {{ endblock }}

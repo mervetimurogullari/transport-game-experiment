@@ -1,0 +1,67 @@
+{{ load otree static }}
+
+{{ block title }}
+    Before the negotiation
+{{ endblock }}
+
+{{ block content }}
+
+    <p>
+        Before we proceed with the explanation, we would like to know what you expect from <strong>the two other participants who 
+        will join you in the negotiation process</strong>. 
+        
+        Remember, these are two other people from the LISS panel, who have seen exactly the same explanation as you just have. 
+    </p>
+    
+    <p>
+        Please indicate for each of the statements below to what extent you agree or disagree that they describe the other 
+        participants. What do you expect from these participants?
+    </p>    
+
+    <p>
+        Note: If you are using a phone, we recommend holding it horizontally for a better view.
+    </p>
+
+    <table class="table">
+        <tr>
+            <th style="width: 50%;">
+                <center><br>Statement</center>
+            </th>
+            <th style="width: 10%;">
+                <center>Strongly Disagree <br> 1</center>
+            </th>
+            <th style="width: 10%;">
+                <center>Disagree<br>2</center>
+            </th>
+            <th style="width: 10%;">
+                <center>Neither Agree nor Disagree<br>3</center>
+            </th>
+            <th style="width: 10%;">
+                <center>Agree<br>4</center>
+            </th>
+            <th style="width: 10%;">
+                <center>Strongly Agree <br> 5</center>
+            </th>
+        </tr>
+
+        {{ for field in form }}
+            <tr>
+                <td>{{ field.label }}</td>
+                {{ for choice in field }}
+                    <td><center>{{ choice }}</center></td>
+                {{ endfor }}
+            </tr>
+        {{ endfor }}
+    </table>
+
+    {{ next_button }}
+
+{{ endblock }}
+
+{{ block scripts }}
+    <style>
+        .table {
+            table-layout: fixed;
+        }
+    </style>
+{{ endblock }}

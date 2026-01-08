@@ -1,0 +1,59 @@
+{{ load otree static }}
+
+{{ block title }}
+    You represent the 
+        {{ if player.position == 'A' }} large {{ endif }}
+        {{ if player.position == 'B' }} medium {{ endif }}
+        {{ if player.position == 'C' }} small {{ endif }} 
+    company (Company {{ player.position }})
+{{ endblock }}
+
+
+{{ block content }}
+
+    {{ if player.group.is_experimental }}
+
+        <p>
+            About two weeks ago, you completed a questionnaire in which you were asked how you prefer to allocate resources 
+            between yourself and others. The image below shows your result.
+        </p>
+
+        <img src="data:image/png;base64,{{ player.gauge_plot_svo }}" />
+
+        <h4>Who are you negotiating with?</h4>
+
+        <p>
+            The other participants also completed the same questionnaire. Their results are shown below.        
+        </p>
+
+        <p>
+            {{ for other_player in player.get_others_in_group }}
+                Company <strong>{{ other_player.position }}</strong> transports <strong>{{other_player.resources}}</strong> tons. 
+                Their result is displayed below.<br>
+
+                <img src="data:image/png;base64,{{ other_player.gauge_plot_svo }}" /><br>
+
+            {{ endfor }}
+
+            Note that every participant will see these scores for all three players in the negotiation.
+        </p>
+
+    {{ else }}
+        
+        <h4>Who are you negotiating with?</h4> 
+
+        <p></p>
+            {{ for other_player in player.get_others_in_group }}
+                Company <strong>{{ other_player.position }}</strong> transports <strong>{{other_player.resources}}</strong> tons.<br><br> 
+            {{ endfor }}
+        </p>
+
+    {{ endif }}
+
+    <p>
+        Now click on “Next”
+    </p>
+
+    {{ next_button }}
+    
+{{ endblock }}

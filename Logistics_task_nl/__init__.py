@@ -1,24 +1,38 @@
 import random
 import string
-
+import time
+import csv
 from otree.api import *
 
+import matplotlib
 
-author = 'Your name here'
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+import io
+import base64
+
+# example: store the file inside your app folder
+preload_csv = "Logistics_task_nl/data/svo_preload_example.csv"
+
+author = "Merve"
 doc = """
-Your app description
+Tweede deel van het onderzoek
 """
 
 
-def slider_field(label):
-    return models.IntegerField(min=0, max=100, label=label)
-
-
 class C(BaseConstants):
-    NAME_IN_URL = 'Logistics_task'
+    NAME_IN_URL = "Logistics_task_nl"
     PLAYERS_PER_GROUP = 3
     NUM_ROUNDS = 20
-    POSITIONS = ['A', 'B', 'C']
+    POSITIONS = ["A", "B", "C"]
+    oneens_eens_5_point_scale = [
+            [1, "Helemaal mee oneens"],
+            [2, "Niet mee eens"],
+            [3, "Niet mee eens niet mee oneens"],
+            [4, "Mee eens"],
+            [5, "Helemaal mee eens"],
+        ]
 
 
 class Subsession(BaseSubsession):
@@ -29,6 +43,10 @@ class Subsession(BaseSubsession):
 
 
 class Group(BaseGroup):
+    # Initialize treatment as False
+    is_experimental = models.BooleanField(
+        initial= False
+    )  
     proposed_coalition_player_A = models.StringField(
         widget=widgets.RadioSelect,
     )
@@ -59,7 +77,7 @@ class Group(BaseGroup):
     selected_coalition_allocation_A_player_C = models.IntegerField()
     selected_coalition_allocation_B_player_C = models.IntegerField()
     selected_coalition_allocation_C_player_C = models.IntegerField()
-    coalition_formed = models.BooleanField(default=False) # seyit last problem
+    coalition_formed = models.BooleanField(default=False)
     formed_coalition_name = models.StringField()
     payoff_A = models.IntegerField()
     payoff_B = models.IntegerField()
@@ -67,43 +85,34 @@ class Group(BaseGroup):
 
 
 class Player(BasePlayer):
+    gauge_plot_svo = models.LongStringField()
+    # Set initial svo_score to -19 (out of the scope), this score is overwritten when a value is found in the preload csv.
+    svo_score = models.IntegerField(
+        initial= -19
+    ) 
     completion_code = models.StringField()
-    score = models.IntegerField()
     position = models.StringField()
     resources = models.IntegerField()
-    goal = models.StringField(blank=True)
     comment = models.StringField(blank=True)
-    age = models.IntegerField() #blank=True) # Seyit xxxxx
-    mturk_id = models.StringField()
-    gender = models.IntegerField(
-        choices=[
-            [0, 'Vrouwelijk'],
-            [1, 'Mannelijk'],
-            [2, 'Anders'],
-            [3, 'Liever niet zeggen'],
-        ],
-        widget=widgets.RadioSelect(),
-        # blank=True, # Seyit xxxxx
-    )
-    pcuse = models.IntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-    )
+    # age = models.IntegerField()
+    # gender = models.IntegerField(
+    #     choices=[
+    #         [0, "Vrouw"],
+    #         [1, "Man"],
+    #         [2, "Anders"],
+    #         [3, "Geen voorkeur om te antwoorden"],
+    #     ],
+    #     widget=widgets.RadioSelect(),
+    # )
     comprehension_position = models.IntegerField(widget=widgets.RadioSelect())
     comprehension_position_fail = models.IntegerField()
     comprehension_resources = models.IntegerField(widget=widgets.RadioSelect())
     comprehension_resources_fail = models.IntegerField()
     comprehension_bonus = models.IntegerField(
         choices=[
-            [0, '10000 euro'],
-            [1, '9000 euro'],
-            [2, '8000 euro'],
+            [0, "10000 euro"],
+            [1, "9000 euro"],
+            [2, "8000 euro"],
         ],
         widget=widgets.RadioSelect(),
     )
@@ -116,463 +125,720 @@ class Player(BasePlayer):
     selected_coalition_allocation_A = models.IntegerField()
     selected_coalition_allocation_B = models.IntegerField()
     selected_coalition_allocation_C = models.IntegerField()
-    allocate_to_player_A = models.IntegerField(blank=True, null=True)
-    allocate_to_player_B = models.IntegerField(blank=True, null=True)
-    allocate_to_player_C = models.IntegerField(blank=True, null=True)
+    allocate_to_player_A = models.IntegerField(blank=True, null=True, initial=0)
+    allocate_to_player_B = models.IntegerField(blank=True, null=True, initial=0)
+    allocate_to_player_C = models.IntegerField(blank=True, null=True, initial=0)
     money = models.IntegerField()
-    question_order = models.StringField()
-    manipulation_check1 = models.IntegerField(
-        choices=[
-            [0, 'On the basis of performance on a slider task'],
-            [1, 'By a random draw'],
-        ],
-        widget=widgets.RadioSelect(),
+
+    # Trust measurement items; after the information. For both groups, specific to each player
+    trust_pre_1_A_to_B = models.IntegerField(
+        label="Deelnemer B zal dezelfde soort voorstellen doen tijdens alle stappen van de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
-    manipulation_check2 = models.IntegerField(
-        choices=[
-            [0, 'Parties with more seats contributed more'],
-            [1, 'They did not contribute to it at all. The budget was fixed.'],
-        ],
-        widget=widgets.RadioSelect(),
+    trust_pre_2_A_to_B = models.IntegerField(
+        label="Deelnemer B zal voorstellen doen die duidelijk laten zien wat hij/zij wil in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
-    manipulation_check2control = models.IntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-            [6, ""],
-            [7, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
+    trust_pre_3_A_to_B = models.IntegerField(
+        label="Deelnemer B zal een onderhandelingsstrategie gebruiken die ik goed kan voorspellen.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
-    manipulation_check2controlbudget = models.IntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-            [6, ""],
-            [7, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
+    trust_pre_4_A_to_B = models.IntegerField(
+        label="Deelnemer B zal steeds op dezelfde manier voorstellen doen en kiezen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
-    seats_deserve = models.IntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-            [6, ""],
-            [7, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
+    trust_pre_5_A_to_B = models.IntegerField(
+        label="Deelnemer B zal proberen om het geld eerlijk te verdelen als we een coalitie vormen in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
-    budget_deserve = models.IntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-            [6, ""],
-            [7, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
+    trust_pre_6_A_to_B = models.IntegerField(
+        label="Deelnemer B zal rekening houden met wat ik krijg als hij/zij voorstellen doet in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
-    motivation_max = models.IntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-            [6, ""],
-            [7, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Maximize your own outcomes",
+    trust_pre_7_A_to_B = models.IntegerField(
+        label="Deelnemer B zal mijn voorstel waarschijnlijk accepteren als ik een coalitie met hem/haar voorstel in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
-    motivation_harm = models.IntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-            [6, ""],
-            [7, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Minimize harm to the other bargainers",
-    )
-    motivation_deserve = models.IntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-            [6, ""],
-            [7, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Make sure that every bargainer got what they deserved",
+    trust_pre_8_A_to_B = models.IntegerField(
+        label="Deelnemer B zal rekening houden met mijn belangen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
 
-    pt_1 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Ik vind het moeilijk om de dingen vanuit andermans gezichtspunt te bekijken"
+    #####################################
+
+    trust_pre_1_A_to_C = models.IntegerField(
+        label="Deelnemer C zal dezelfde soort voorstellen doen tijdens alle stappen van de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_2_A_to_C = models.IntegerField(
+        label="Deelnemer C zal voorstellen doen die duidelijk laten zien wat hij/zij wil in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_3_A_to_C = models.IntegerField(
+        label="Deelnemer C zal een onderhandelingsstrategie gebruiken die ik goed kan voorspellen.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_4_A_to_C = models.IntegerField(
+        label="Deelnemer C zal steeds op dezelfde manier voorstellen doen en kiezen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_5_A_to_C = models.IntegerField(
+        label="Deelnemer C zal proberen om het geld eerlijk te verdelen als we een coalitie vormen in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_6_A_to_C = models.IntegerField(
+        label="Deelnemer C zal rekening houden met wat ik krijg als hij/zij voorstellen doet in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_7_A_to_C = models.IntegerField(
+        label="Deelnemer C zal mijn voorstel waarschijnlijk accepteren als ik een coalitie met hem/haar voorstel in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_8_A_to_C = models.IntegerField(
+        label="Deelnemer C zal rekening houden met mijn belangen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
 
-    pt_2 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Ik probeer een probleem altijd van alle kanten te bekijken voor ik een beslissing neem"
+    #####################################
+
+    trust_pre_1_B_to_A = models.IntegerField(
+        label="Deelnemer A zal dezelfde soort voorstellen doen tijdens alle stappen van de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
-    pt_3 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Ik probeer mijn vrienden beter te begrijpen door me voor te stellen hoe zij er tegenaan kijken"
+    trust_pre_2_B_to_A = models.IntegerField(
+        label="Deelnemer A zal voorstellen doen die duidelijk laten zien wat hij/zij wil in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_3_B_to_A = models.IntegerField(
+        label="Deelnemer A zal een onderhandelingsstrategie gebruiken die ik goed kan voorspellen.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_4_B_to_A = models.IntegerField(
+        label="Deelnemer A zal steeds op dezelfde manier voorstellen doen en kiezen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_5_B_to_A = models.IntegerField(
+        label="Deelnemer A zal proberen om het geld eerlijk te verdelen als we een coalitie vormen in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_6_B_to_A = models.IntegerField(
+        label="Deelnemer A zal rekening houden met wat ik krijg als hij/zij voorstellen doet in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_7_B_to_A = models.IntegerField(
+        label="Deelnemer A zal mijn voorstel waarschijnlijk accepteren als ik een coalitie met hem/haar voorstel in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_8_B_to_A = models.IntegerField(
+        label="Deelnemer A zal rekening houden met mijn belangen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
 
-    pt_4 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Als ik ergens zeker van ben, verspil ik niet veel tijd met het luisteren naar de argumenten van andere mensen"
+    #####################################
+
+    trust_pre_1_B_to_C = models.IntegerField(
+        label="Deelnemer C zal dezelfde soort voorstellen doen tijdens alle stappen van de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
-    pt_5 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Ik houd er rekening mee dat anderen op een andere manier tegen de dingen aankijken"
+    trust_pre_2_B_to_C = models.IntegerField(
+        label="Deelnemer C zal voorstellen doen die duidelijk laten zien wat hij/zij wil in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_3_B_to_C = models.IntegerField(
+        label="Deelnemer C zal een onderhandelingsstrategie gebruiken die ik goed kan voorspellen.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_4_B_to_C = models.IntegerField(
+        label="Deelnemer C zal steeds op dezelfde manier voorstellen doen en kiezen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_5_B_to_C = models.IntegerField(
+        label="Deelnemer C zal proberen om het geld eerlijk te verdelen als we een coalitie vormen in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_6_B_to_C = models.IntegerField(
+        label="Deelnemer C zal rekening houden met wat ik krijg als hij/zij voorstellen doet in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_7_B_to_C = models.IntegerField(
+        label="Deelnemer C zal mijn voorstel waarschijnlijk accepteren als ik een coalitie met hem/haar voorstel in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_8_B_to_C = models.IntegerField(
+        label="Deelnemer C zal rekening houden met mijn belangen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
 
-    pt_6 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Als ik boos op iemand ben, probeer ik de situatie meestal een tijdje van zijn/haar kant te bekijken"
+    #####################################
+
+    trust_pre_1_C_to_A = models.IntegerField(
+        label="Deelnemer A zal dezelfde soort voorstellen doen tijdens alle stappen van de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_2_C_to_A = models.IntegerField(
+        label="Deelnemer A zal voorstellen doen die duidelijk laten zien wat hij/zij wil in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_3_C_to_A = models.IntegerField(
+        label="Deelnemer A zal een onderhandelingsstrategie gebruiken die ik goed kan voorspellen.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_4_C_to_A = models.IntegerField(
+        label="Deelnemer A zal steeds op dezelfde manier voorstellen doen en kiezen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_5_C_to_A = models.IntegerField(
+        label="Deelnemer A zal proberen om het geld eerlijk te verdelen als we een coalitie vormen in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_6_C_to_A = models.IntegerField(
+        label="Deelnemer A zal rekening houden met wat ik krijg als hij/zij voorstellen doet in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_7_C_to_A = models.IntegerField(
+        label="Deelnemer A zal mijn voorstel waarschijnlijk accepteren als ik een coalitie met hem/haar voorstel in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_8_C_to_A = models.IntegerField(
+        label="Deelnemer A zal rekening houden met mijn belangen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
 
-    pt_7 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Voordat ik kritiek heb op anderen, probeer ik me voor te stellen hoe ik me zou voelen als ik in hun schoenen stond"
+    #####################################
+
+    trust_pre_1_C_to_B = models.IntegerField(
+        label="Deelnemer B zal dezelfde soort voorstellen doen tijdens alle stappen van de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_2_C_to_B = models.IntegerField(
+        label="Deelnemer B zal voorstellen doen die duidelijk laten zien wat hij/zij wil in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_3_C_to_B = models.IntegerField(
+        label="Deelnemer B zal een onderhandelingsstrategie gebruiken die ik goed kan voorspellen.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_4_C_to_B = models.IntegerField(
+        label="Deelnemer B zal steeds op dezelfde manier voorstellen doen en kiezen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_5_C_to_B = models.IntegerField(
+        label="Deelnemer B zal proberen om het geld eerlijk te verdelen als we een coalitie vormen in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_6_C_to_B = models.IntegerField(
+        label="Deelnemer B zal rekening houden met wat ik krijg als hij/zij voorstellen doet in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_7_C_to_B = models.IntegerField(
+        label="Deelnemer B zal mijn voorstel waarschijnlijk accepteren als ik een coalitie met hem/haar voorstel in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_pre_8_C_to_B = models.IntegerField(
+        label="Deelnemer B zal rekening houden met mijn belangen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
 
-    ec_1 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Ik voel me vaak bezorgd over mensen die het minder goed hebben dan ikzelf"
+    ###############################################################################################################
+
+    # Trust measurement, after the negotiation. For both groups, specific to each player
+
+    trust_aft_1_A_to_B = models.IntegerField(
+        label="Deelnemer B zou dezelfde soort voorstellen doen tijdens alle stappen van de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_2_A_to_B = models.IntegerField(
+        label="Deelnemer B zou voorstellen doen die duidelijk laten zien wat hij/zij wil in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_3_A_to_B = models.IntegerField(
+        label="Deelnemer B zou een onderhandelingsstrategie gebruiken die ik goed kan voorspellen.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_4_A_to_B = models.IntegerField(
+        label="Deelnemer B zou steeds op dezelfde manier voorstellen doen en kiezen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_5_A_to_B = models.IntegerField(
+        label="Deelnemer B zou proberen om het geld eerlijk te verdelen als we een coalitie vormen in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_6_A_to_B = models.IntegerField(
+        label="Deelnemer B zou rekening houden met wat ik krijg als hij/zij voorstellen doet in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_7_A_to_B = models.IntegerField(
+        label="Deelnemer B zou mijn voorstel waarschijnlijk accepteren als ik een coalitie met hem/haar voorstel in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_8_A_to_B = models.IntegerField(
+        label="Deelnemer B zou rekening houden met mijn belangen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
 
-    ec_2 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="De problemen van anderen kunnen me meestal niets schelen"
+    #####################################
+
+    trust_aft_1_A_to_C = models.IntegerField(
+        label="Deelnemer C zou dezelfde soort voorstellen doen tijdens alle stappen van de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
-    ec_3 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Als ik zie dat iemand benadeeld wordt, krijg ik een vervelend gevoel"
+    trust_aft_2_A_to_C = models.IntegerField(
+        label="Deelnemer C zou voorstellen doen die duidelijk laten zien wat hij/zij wil in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_3_A_to_C = models.IntegerField(
+        label="Deelnemer C zou een onderhandelingsstrategie gebruiken die ik goed kan voorspellen.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_4_A_to_C = models.IntegerField(
+        label="Deelnemer C zou steeds op dezelfde manier voorstellen doen en kiezen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_5_A_to_C = models.IntegerField(
+        label="Deelnemer C zou proberen om het geld eerlijk te verdelen als we een coalitie vormen in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_6_A_to_C = models.IntegerField(
+        label="Deelnemer C zou rekening houden met wat ik krijg als hij/zij voorstellen doet in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_7_A_to_C = models.IntegerField(
+        label="Deelnemer C zou mijn voorstel waarschijnlijk accepteren als ik een coalitie met hem/haar voorstel in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_8_A_to_C = models.IntegerField(
+        label="Deelnemer C zou rekening houden met mijn belangen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
 
-    ec_4 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Het ongeluk van andere mensen doet me meestal niet zoveel"
+    #####################################
+
+    trust_aft_1_B_to_A = models.IntegerField(
+        label="Deelnemer A zou dezelfde soort voorstellen doen tijdens alle stappen van de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
-    ec_5 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Als ik zie dat iemand oneerlijk behandeld wordt, heb ik weinig medelijden"
+    trust_aft_2_B_to_A = models.IntegerField(
+        label="Deelnemer A zou voorstellen doen die duidelijk laten zien wat hij/zij wil in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_3_B_to_A = models.IntegerField(
+        label="Deelnemer A zou een onderhandelingsstrategie gebruiken die ik goed kan voorspellen.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_4_B_to_A = models.IntegerField(
+        label="Deelnemer A zou steeds op dezelfde manier voorstellen doen en kiezen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_5_B_to_A = models.IntegerField(
+        label="Deelnemer A zou proberen om het geld eerlijk te verdelen als we een coalitie vormen in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_6_B_to_A = models.IntegerField(
+        label="Deelnemer A zou rekening houden met wat ik krijg als hij/zij voorstellen doet in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_7_B_to_A = models.IntegerField(
+        label="Deelnemer A zou mijn voorstel waarschijnlijk accepteren als ik een coalitie met hem/haar voorstel in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_8_B_to_A = models.IntegerField(
+        label="Deelnemer A zou rekening houden met mijn belangen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
 
-    ec_6 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Ik word vaak geraakt door wat andere mensen meemaken"
+    #####################################
+
+    trust_aft_1_B_to_C = models.IntegerField(
+        label="Deelnemer C zou dezelfde soort voorstellen doen tijdens alle stappen van de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_2_B_to_C = models.IntegerField(
+        label="Deelnemer C zou voorstellen doen die duidelijk laten zien wat hij/zij wil in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_3_B_to_C = models.IntegerField(
+        label="Deelnemer C zou een onderhandelingsstrategie gebruiken die ik goed kan voorspellen.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_4_B_to_C = models.IntegerField(
+        label="Deelnemer C zou steeds op dezelfde manier voorstellen doen en kiezen tijdens de onderhandeling.",
+         choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_5_B_to_C = models.IntegerField(
+        label="Deelnemer C zou proberen om het geld eerlijk te verdelen als we een coalitie vormen in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_6_B_to_C = models.IntegerField(
+        label="Deelnemer C zou rekening houden met wat ik krijg als hij/zij voorstellen doet in de onderhandeling.",
+         choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_7_B_to_C = models.IntegerField(
+        label="Deelnemer C zou mijn voorstel waarschijnlijk accepteren als ik een coalitie met hem/haar voorstel in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_8_B_to_C = models.IntegerField(
+        label="Deelnemer C zou rekening houden met mijn belangen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
 
-    attention_check = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Dit is een controle: kies optie 5"
+    #####################################
+
+    trust_aft_1_C_to_A = models.IntegerField(
+        label="Deelnemer A zou dezelfde soort voorstellen doen tijdens alle stappen van de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_2_C_to_A = models.IntegerField(
+        label="Deelnemer A zou voorstellen doen die duidelijk laten zien wat hij/zij wil in de onderhandeling.",
+         choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_3_C_to_A = models.IntegerField(
+        label="Deelnemer A zou een onderhandelingsstrategie gebruiken die ik goed kan voorspellen.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_4_C_to_A = models.IntegerField(
+        label="Deelnemer A zou steeds op dezelfde manier voorstellen doen en kiezen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_5_C_to_A = models.IntegerField(
+        label="Deelnemer A zou proberen om het geld eerlijk te verdelen als we een coalitie vormen in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_6_C_to_A = models.IntegerField(
+        label="Deelnemer A zou rekening houden met wat ik krijg als hij/zij voorstellen doet in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_7_C_to_A = models.IntegerField(
+        label="Deelnemer A zou mijn voorstel waarschijnlijk accepteren als ik een coalitie met hem/haar voorstel in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_8_C_to_A = models.IntegerField(
+        label="Deelnemer A zou rekening houden met mijn belangen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
 
-    ec_8 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Ik ben een zachtaardig iemand"
+    #####################################
+
+    trust_aft_1_C_to_B = models.IntegerField(
+        label="Deelnemer B zou dezelfde soort voorstellen doen tijdens alle stappen van de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_2_C_to_B = models.IntegerField(
+        label="Deelnemer B zou voorstellen doen die duidelijk laten zien wat hij/zij wil in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_3_C_to_B = models.IntegerField(
+        label="Deelnemer B zou een onderhandelingsstrategie gebruiken die ik goed kan voorspellen.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_4_C_to_B = models.IntegerField(
+        label="Deelnemer B zou steeds op dezelfde manier voorstellen doen en kiezen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_5_C_to_B = models.IntegerField(
+        label="Deelnemer B zou proberen om het geld eerlijk te verdelen als we een coalitie vormen in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_6_C_to_B = models.IntegerField(
+        label="Deelnemer B zou rekening houden met wat ik krijg als hij/zij voorstellen doet in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_7_C_to_B = models.IntegerField(
+        label="Deelnemer B zou mijn voorstel waarschijnlijk accepteren als ik een coalitie met hem/haar voorstel in de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
+    )
+    trust_aft_8_C_to_B = models.IntegerField(
+        label="Deelnemer B zou rekening houden met mijn belangen tijdens de onderhandeling.",
+        choices= C.oneens_eens_5_point_scale,
+        widget=widgets.RadioSelect,
     )
 
-    apt_1 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Probeerde ik om het perspectief van de andere deelnemers in te nemen"
-    )
+    ##################################### Only for leftovers, for a graceful ending
 
-    apt_2 = models.PositiveIntegerField(
+    competition = models.IntegerField(
+        label="Waar zou u zichzelf op de volgende schaal plaatsen?",
         choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Stelde ik mij voor hoe de andere deelnemers zich voelden"
-    )
-    apt_3 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Deed ik mijn best om de wereld door de ogen van de andere deelnemers te zien"
-    )
-
-    apt_4 = models.PositiveIntegerField(
-        choices=[
-            [1, ""],
-            [2, ""],
-            [3, ""],
-            [4, ""],
-            [5, ""],
-        ],
-        widget=widgets.RadioSelectHorizontal,
-        label="Probeerde ik het standpunt van de andere deelnemers te begrijpen"
-    )
-
-    device = models.IntegerField(
-        choices=[
-            [1, "Desktop/laptop with a mouse"],
-            [2, "Desktop/laptop without a mouse"],
-            [3, "Tablet"],
-            [4, "Mobile phone"],
-            [5, "Other"],
+            [
+                1,
+                "1 Onderlinge competitie is goed. Het stimuleert mensen om hard te werken en nieuwe ideeën te ontwikkelen",
+            ],
+            [2, "2"],
+            [3, "3"],
+            [4, "4"],
+            [
+                5,
+                "5 Onderlinge competitie is schadelijk. Het brengt het slechtste in mensen naar boven",
+            ],
+            [6, "Ik weet het niet"],
         ],
         widget=widgets.RadioSelect,
-        blank=True,
     )
-    browser = models.IntegerField(
+
+    gen_trust_1 = models.IntegerField(
+        label="Denkt u, in het algemeen, dat de meeste mensen te vertrouwen zijn, of dat u niet voorzichtig genoeg kunt zijn in de omgang met mensen? Geef uw antwoord op een schaal van 1 tot 5, waarbij 1 betekent dat je niet voorzichtig genoeg kunt zijn en 5 dat de meeste mensen te vertrouwen zijn.",
         choices=[
-            [1, "Chrome"],
-            [2, "Internet Explorer or Microsoft Edge"],
-            [3, "Safari"],
-            [4, "Firefox"],
-            [5, "Opera"],
-            [6, "Other"],
+            [1, "1 Je kunt niet voorzichtig genoeg zijn"],
+            [2, "2"],
+            [3, "3"],
+            [4, "4"],
+            [5, "5 De meeste mensen zijn te vertrouwen"],
+            [6, "Ik weet het niet"],
         ],
         widget=widgets.RadioSelect,
-        blank=True,
     )
-    tslider1 = slider_field(False)
-    tslider2 = slider_field(False)
-    tslider3 = slider_field(False)
-    tslider4 = slider_field(False)
-    tslider5 = slider_field(False)
-    tslider6 = slider_field(False)
-    tslider7 = slider_field(False)
-    tslider8 = slider_field(False)
-    tslider9 = slider_field(False)
-    tslider10 = slider_field(False)
-    tslider11 = slider_field(False)
-    tslider12 = slider_field(False)
-    tslider13 = slider_field(False)
-    tslider14 = slider_field(False)
-    tslider15 = slider_field(False)
-    tslider16 = slider_field(False)
-    tslider17 = slider_field(False)
-    tslider18 = slider_field(False)
-    tslider19 = slider_field(False)
-    tslider20 = slider_field(False)
-    tslider21 = slider_field(False)
-    slider1 = slider_field(False)
-    slider2 = slider_field(False)
-    slider3 = slider_field(False)
-    slider4 = slider_field(False)
-    slider5 = slider_field(False)
-    slider6 = slider_field(False)
-    slider7 = slider_field(False)
-    slider8 = slider_field(False)
-    slider9 = slider_field(False)
-    slider10 = slider_field(False)
-    slider11 = slider_field(False)
-    slider12 = slider_field(False)
-    slider13 = slider_field(False)
-    slider14 = slider_field(False)
-    slider15 = slider_field(False)
-    slider16 = slider_field(False)
-    slider17 = slider_field(False)
-    slider18 = slider_field(False)
-    slider19 = slider_field(False)
-    slider20 = slider_field(False)
-    slider21 = slider_field(False)
-    slider22 = slider_field(False)
-    slider23 = slider_field(False)
-    slider24 = slider_field(False)
-    slider25 = slider_field(False)
-    slider26 = slider_field(False)
-    slider27 = slider_field(False)
-    slider28 = slider_field(False)
-    slider29 = slider_field(False)
-    slider30 = slider_field(False)
-    slider31 = slider_field(False)
-    slider32 = slider_field(False)
-    slider33 = slider_field(False)
-    slider34 = slider_field(False)
-    slider35 = slider_field(False)
-    slider36 = slider_field(False)
-    slider37 = slider_field(False)
-    slider38 = slider_field(False)
-    slider39 = slider_field(False)
-    slider40 = slider_field(False)
-    slider41 = slider_field(False)
-    slider42 = slider_field(False)
-    slider43 = slider_field(False)
-    slider44 = slider_field(False)
-    slider45 = slider_field(False)
-    slider46 = slider_field(False)
-    slider47 = slider_field(False)
-    slider48 = slider_field(False)
-    slider49 = slider_field(False)
-    slider50 = slider_field(False)
-    slider51 = slider_field(False)
-    slider52 = slider_field(False)
-    slider53 = slider_field(False)
-    slider54 = slider_field(False)
-    slider55 = slider_field(False)
-    slider56 = slider_field(False)
-    slider57 = slider_field(False)
-    slider58 = slider_field(False)
-    slider59 = slider_field(False)
-    slider60 = slider_field(False)
-    slider61 = slider_field(False)
-    slider62 = slider_field(False)
-    slider63 = slider_field(False)
+
+    gen_trust_2 = models.IntegerField(
+        label="Denkt u dat de meeste mensen misbruik van u zouden proberen te maken als zij daartoe de kans krijgen, of dat zij zouden proberen eerlijk te zijn? Geef uw antwoord op een schaal van 1 tot 5, waarbij 1 betekent dat de meeste mensen misbruik van u zouden proberen te maken en 5 dat de meeste mensen eerlijk zouden proberen te zijn.",
+        choices=[
+            [1, "1 De meeste mensen zouden proberen misbruik van mij te maken"],
+            [2, "2"],
+            [3, "3"],
+            [4, "4"],
+            [5, "5 De meeste mensen zouden proberen eerlijk te zijn"],
+            [6, "Ik weet het niet"],
+        ],
+        widget=widgets.RadioSelect,
+    )
+
+    gen_trust_3 = models.IntegerField(
+        label="Denkt u dat mensen meestal behulpzaam proberen te zijn of denkt u dat zij meestal aan zichzelf denken? Geef uw antwoord op een schaal van 1 tot 5, waarbij 1 betekent dat mensen meestal aan zichzelf denken en 5 dat mensen meestal proberen behulpzaam te zijn.",
+        choices=[
+            [1, "1 Mensen denken meestal aan zichzelf"],
+            [2, "2"],
+            [3, "3"],
+            [4, "4"],
+            [5, "5 Mensen proberen meestal behulpzaam te zijn"],
+            [6, "Ik weet het niet"],
+        ],
+        widget=widgets.RadioSelect,
+    )
+
+    gen_trust_4 = models.IntegerField(
+        label="Denkt u dat zeer weinig mensen uw vertrouwen verdienen of denkt u dat de meeste mensen uw vertrouwen verdienen? Geef uw antwoord op een schaal van 1 tot 5, waarbij 1 betekent dat zeer weinig mensen uw vertrouwen verdienen en 5 dat de meeste mensen uw vertrouwen verdienen.",
+        choices=[
+            [1, "1 Zeer weinig mensen verdienen mijn vertrouwen"],
+            [2, "2"],
+            [3, "3"],
+            [4, "4"],
+            [5, "5 De meeste mensen verdienen mijn vertrouwen"],
+            [6, "Ik weet het niet"],
+        ],
+        widget=widgets.RadioSelect,
+    )
+
+
+# FUNCTIONS
+# Create gauge plot for svo scores
+def create_gauge(svo_value):
+
+    fig, ax = plt.subplots(
+        figsize=(6, 3),
+        subplot_kw={"projection": "polar"},
+        constrained_layout=False,
+    )
+
+    ax.set_theta_zero_location("W")
+    ax.set_theta_direction(-1)
+
+    category_boundaries_deg = np.linspace(0, 180, 7)
+    category_boundaries_rad = np.radians(category_boundaries_deg)
+
+    def determine_color(degree):
+        index = int(degree // 30)
+        colors = ["#7CB9E8" if i == index else "white" for i in range(6)]
+        return colors
+
+    def value_to_degrees(value):
+        if -20 <= value < 1.5:
+            return np.interp(value, [-20, 1.5], [0, 30])
+        elif 1.5 <= value < 9.5:
+            return np.interp(value, [1.5, 9.5], [30, 60])
+        elif 9.5 <= value < 22.45:
+            return np.interp(value, [9.5, 22.45], [60, 90])
+        elif 22.45 <= value < 30.8:
+            return np.interp(value, [22.45, 30.8], [90, 120])
+        elif 30.8 <= value < 36.3:
+            return np.interp(value, [30.8, 36.3], [120, 150])
+        elif 36.3 <= value <= 65:
+            return np.interp(value, [36.3, 65], [150, 180])
+        return 0
+
+    # Generate the plot based on the player's value
+    degree = value_to_degrees(svo_value)
+    section_colors = determine_color(degree)
+
+    # Clear the axes and draw the plot
+    ax.set_yticklabels([])
+    ax.grid(False)
+    ax.spines["polar"].set_visible(False)
+    ax.set_xticklabels([])
+    ax.set_rlim(0, 1.3)
+
+    for i in range(len(category_boundaries_rad) - 1):
+        theta_start = category_boundaries_rad[i]
+        theta_end = category_boundaries_rad[i + 1]
+        theta = np.linspace(theta_start, theta_end, 100)
+        r = np.ones_like(theta)
+        ax.fill_between(
+            theta, 0, r, color=section_colors[i], edgecolor="#696969", linewidth=1
+        )
+
+    # Draw the needle
+    needle_theta = np.radians(degree)
+    triangle_width = np.radians(4)
+    triangle_height = 0.15
+    triangle_theta = [
+        needle_theta - triangle_width / 2,
+        needle_theta + triangle_width / 2,
+        needle_theta,
+    ]
+    triangle_radius = [1.2, 1.2, 1.2 - triangle_height]
+
+    ax.fill(triangle_theta, triangle_radius, color="#696969")
+
+    # Labels with adjusted positions
+    ax.text(
+        np.radians(0),
+        1.3,
+        "Zelf",
+        ha="center",
+        va="center",
+        fontsize=12,
+        color="#696969",
+    )
+    ax.text(
+        np.radians(180),
+        1.3,
+        "Ander",
+        ha="center",
+        va="center",
+        fontsize=12,
+        color="#696969",
+    )
+
+    # Save the figure with tight bounding box
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches="tight", pad_inches=0)
+    plt.close(fig)
+    buf.seek(0)
+    image_png = buf.getvalue()
+    buf.close()
+
+    graphic = base64.b64encode(image_png)
+    graphic = graphic.decode("utf-8")
+
+    return graphic
 
 
 def creating_session(subsession: Subsession):
-    session = subsession.session # Seyit
+    session = subsession.session
     subsession.resources_AB = (
-        session.config['resources_player_A']
-        + session.config['resources_player_B']
+        session.config["resources_player_A"] + session.config["resources_player_B"]
     )
     subsession.resources_AC = (
-        session.config['resources_player_A']
-        + session.config['resources_player_C']
+        session.config["resources_player_A"] + session.config["resources_player_C"]
     )
     subsession.resources_BC = (
-        session.config['resources_player_B']
-        + session.config['resources_player_C']
+        session.config["resources_player_B"] + session.config["resources_player_C"]
     )
     subsession.resources_ABC = (
-        session.config['resources_player_A']
-        + session.config['resources_player_B']
-        + session.config['resources_player_C']
+        session.config["resources_player_A"]
+        + session.config["resources_player_B"]
+        + session.config["resources_player_C"]
     )
     for p in subsession.get_players():
         p.participant.end_game = False
@@ -583,75 +849,67 @@ def creating_session(subsession: Subsession):
     for p in subsession.get_players():
         p.participant.kicked = False
     for p in subsession.get_players():
-        p.completion_code = 'DS' + ''.join(random.choices(string.digits, k=4))
+        p.completion_code = "DS" + "".join(random.choices(string.digits, k=4))
 
 
 def vars_for_template(player: Player):
-    session = player.session # Seyit
-    subsession = player.subsession #Pradeep
-    resources_player_A = session.config['resources_player_A']
-    resources_player_B = session.config['resources_player_B']
-    resources_player_C = session.config['resources_player_C']
-    decision_point = session.config['decision_point']
-    total_payoff = session.config['total_payoff']
-    base_fee = session.config['base_fee']
-    payoff_conversion = session.config['payoff_conversion']
+    session = player.session
+    subsession = player.subsession
+    resources_player_A = session.config["resources_player_A"]
+    resources_player_B = session.config["resources_player_B"]
+    resources_player_C = session.config["resources_player_C"]
+    decision_point = session.config["decision_point"]
+    total_payoff = session.config["total_payoff"]
+    base_fee = session.config["base_fee"]
+    payoff_conversion = session.config["payoff_conversion"]
     max_bonus = total_payoff * payoff_conversion
-    timeout_time = session.config['timeout_time']
+    timeout_time = session.config["timeout_time"]
     timeout_time_minutes = timeout_time / 60
-    comprehension_check = session.config['comprehension_check']
-    incentives = session.config['incentives']
-    earned = session.config['earned']
-    relation = session.config['relation']
-    timers = session.config['timers']
-    slider_time = session.config['slider_time']
+    comprehension_check = session.config["comprehension_check"]
+    incentives = session.config["incentives"]
+    timers = session.config["timers"]
     possible_coalitions_A = []
     possible_coalitions_B = []
     possible_coalitions_C = []
     possible_coalitions_all = []
-    select_none = session.config['select_none']
-    if subsession.resources_AB >= session.config['decision_point']:
-        possible_coalitions_A.append('AB')
-        possible_coalitions_B.append('AB')
-        possible_coalitions_all.append('AB')
-    if subsession.resources_AC >= session.config['decision_point']:
-        possible_coalitions_A.append('AC')
-        possible_coalitions_C.append('AC')
-        possible_coalitions_all.append('AC')
-    if subsession.resources_BC >= session.config['decision_point']:
-        possible_coalitions_B.append('BC')
-        possible_coalitions_C.append('BC')
-        possible_coalitions_all.append('BC')
+    if subsession.resources_AB >= session.config["decision_point"]:
+        possible_coalitions_A.append("AB")
+        possible_coalitions_B.append("AB")
+        possible_coalitions_all.append("AB")
+    if subsession.resources_AC >= session.config["decision_point"]:
+        possible_coalitions_A.append("AC")
+        possible_coalitions_C.append("AC")
+        possible_coalitions_all.append("AC")
+    if subsession.resources_BC >= session.config["decision_point"]:
+        possible_coalitions_B.append("BC")
+        possible_coalitions_C.append("BC")
+        possible_coalitions_all.append("BC")
     if (
-        subsession.resources_ABC >= session.config['decision_point']
-        and session.config['grand_coalition']
+        subsession.resources_ABC >= session.config["decision_point"]
+        and session.config["grand_coalition"]
     ):
-        possible_coalitions_A.append('ABC')
-        possible_coalitions_B.append('ABC')
-        possible_coalitions_C.append('ABC')
-        possible_coalitions_all.append('ABC')
+        possible_coalitions_A.append("ABC")
+        possible_coalitions_B.append("ABC")
+        possible_coalitions_C.append("ABC")
+        possible_coalitions_all.append("ABC")
     return {
-        'possible_coalitions_A': possible_coalitions_A,
-        'possible_coalitions_B': possible_coalitions_B,
-        'possible_coalitions_C': possible_coalitions_C,
-        'possible_coalitions_all': possible_coalitions_all,
-        'resources_player_A': resources_player_A,
-        'resources_player_B': resources_player_B,
-        'resources_player_C': resources_player_C,
-        'total_payoff': total_payoff,
-        'base_fee': base_fee,
-        'payoff_conversion': payoff_conversion,
-        'select_none': select_none,
-        'decision_point': decision_point,
-        'max_bonus': max_bonus,
-        'timeout_time': timeout_time,
-        'timeout_time_minutes': timeout_time_minutes,
-        'comprehension_check': comprehension_check,
-        'incentives': incentives,
-        'earned': earned,
-        'relation': relation,
-        'timers': timers,
-        'slider_time': slider_time,
+        "possible_coalitions_A": possible_coalitions_A,
+        "possible_coalitions_B": possible_coalitions_B,
+        "possible_coalitions_C": possible_coalitions_C,
+        "possible_coalitions_all": possible_coalitions_all,
+        "resources_player_A": resources_player_A,
+        "resources_player_B": resources_player_B,
+        "resources_player_C": resources_player_C,
+        "total_payoff": total_payoff,
+        "base_fee": base_fee,
+        "payoff_conversion": payoff_conversion,
+        "decision_point": decision_point,
+        "max_bonus": max_bonus,
+        "timeout_time": timeout_time,
+        "timeout_time_minutes": timeout_time_minutes,
+        "comprehension_check": comprehension_check,
+        "incentives": incentives,
+        "timers": timers,
     }
 
 
@@ -666,95 +924,100 @@ def offer_summary(player: Player):
     return "-".join(offers_str)
 
 
-def selected_list(player: Player):
-    group = player.group # Seyit
-    return [p for p in group.get_players() if p.selected == player.id]
-
-
 def leftover_check(player: Player):
-    participant = player.participant # Seyit
-    group = player.group # Seyit
+    participant = player.participant
+    group = player.group
     other_players = player.get_others_in_group()
     for p in other_players:
         if p.participant.kicked == True:
             participant.leftover = True
-        if p.participant._current_page_name == 'Funnel' and group.coalition_formed == False:
-            participant.leftover = True
         if (
-            p.participant._current_page_name == 'Demographics'
+            p.participant._current_page_name == "Funnel"
             and group.coalition_formed == False
         ):
             participant.leftover = True
         if (
-            p.participant._current_page_name == 'PC_use'
+            p.participant._current_page_name == "Debriefing"
             and group.coalition_formed == False
         ):
             participant.leftover = True
         if (
-            p.participant._current_page_name == 'Debriefing'
+            p.participant._current_page_name == "Kicked"
             and group.coalition_formed == False
         ):
-            participant.leftover = True
-        if p.participant._current_page_name == 'Kicked' and group.coalition_formed == False:
             participant.leftover = True
 
 
 def comprehension_position_choices(player: Player):
-    session = player.session # Seyit
+    session = player.session
     choices = [
-        [0, 'Bedrijf A'],
-        [1, 'Bedrijf B'],
-        [2, 'Bedrijf C'],
+        [0, "Bedrijf A"],
+        [1, "Bedrijf B"],
+        [2, "Bedrijf C"],
     ]
     return choices
 
 
 def comprehension_position_error_message(player: Player, value):
-    session = player.session # Seyit
-    if (player.position == 'A' and value != 0) or (player.position == 'B' and value != 1) or (player.position == 'C' and value != 2):
+    session = player.session
+    if (
+        (player.position == "A" and value != 0)
+        or (player.position == "B" and value != 1)
+        or (player.position == "C" and value != 2)
+    ):
         player.comprehension_position_fail = 1
-        return "Dit is niet correct. U vertegenwoordigt Bedrijf {}. Vul alsnog het juiste antwoord in" .format(player.position)
+        return "Dit is niet correct. U vertegenwoordigt Bedrijf {}. Vul alsnog het juiste antwoord in.".format(
+            player.position
+        )
+
 
 def comprehension_resources_choices(player: Player):
-    session = player.session # Seyit
+    session = player.session
     choices = [
-        [0, 'Mijn bedrijf vervoert 4 ton'],
-        [1, 'Mijn bedrijf vervoert 3 ton'],
-        [2, 'Mijn bedrijf vervoert 2 ton'],
+        [0, "Mijn bedrijf vervoert 4 ton"],
+        [1, "Mijn bedrijf vervoert 3 ton"],
+        [2, "Mijn bedrijf vervoert 2 ton"],
     ]
     return choices
 
 
 def comprehension_resources_error_message(player: Player, value):
-    session = player.session # Seyit
-    if (player.position == 'A' and value != 0) or (player.position == 'B' and value != 1) or (player.position == 'C' and value != 2):
+    session = player.session
+    if (
+        (player.position == "A" and value != 0)
+        or (player.position == "B" and value != 1)
+        or (player.position == "C" and value != 2)
+    ):
         player.comprehension_resources_fail = 1
-        return "Dit is niet correct. U vervoert {} ton. Vul alsnog het juiste antwoord in." .format(player.resources)
+        return "Dit is niet correct. U vervoert {} ton. Vul alsnog het juiste antwoord in.".format(
+            player.resources
+        )
+
 
 def comprehension_coalitions_choices(player: Player):
-    session = player.session # Seyit
+    session = player.session
     choices = []
-    if not session.config['grand_coalition']:
+    if not session.config["grand_coalition"]:
         choices = [
-            [0, 'AB, AC '],
-            [1, 'AB, BC'],
-            [2, 'AC, BC'],
-            [3, 'AB, AC, BC'],
+            [0, "AB, AC "],
+            [1, "AB, BC"],
+            [2, "AC, BC"],
+            [3, "AB, AC, BC"],
         ]
-    elif session.config['grand_coalition']:
+    elif session.config["grand_coalition"]:
         choices = [
-            [0, 'AB, AC '],
-            [1, 'AB, BC'],
-            [2, 'AC, BC'],
-            [3, 'AB, AC, BC'],
-            [4, 'AB, AC, BC, ABC'],
+            [0, "AB, AC "],
+            [1, "AB, BC"],
+            [2, "AC, BC"],
+            [3, "AB, AC, BC"],
+            [4, "AB, AC, BC, ABC"],
         ]
     return choices
 
 
 def comprehension_coalitions_error_message(player: Player, value):
-    session = player.session # Seyit
-    if session.config['grand_coalition'] == False and value != 3:
+    session = player.session
+    if session.config["grand_coalition"] == False and value != 3:
         if value == 0:
             player.comprehension_coalitions_fail = 0
         if value == 1:
@@ -762,7 +1025,7 @@ def comprehension_coalitions_error_message(player: Player, value):
         if value == 2:
             player.comprehension_coalitions_fail = 2
         return "Dit is niet correct. Er zijn 3 mogelijke coalities: AB, AC en BC. Vul alsnog het juiste antwoord in."
-    if session.config['grand_coalition'] == True and value != 4:
+    if session.config["grand_coalition"] == True and value != 4:
         if value == 0:
             player.comprehension_coalitions_fail = 1
         return "Dit is niet correct. Er zijn 4 mogelijke coalities: AB, AC, BC en ABC. Vul alsnog het juiste antwoord in."
@@ -774,73 +1037,29 @@ def comprehension_bonus_error_message(player: Player, value):
         return "Dit is niet correct. U onderhandeld over een bedrag van 9000 euro. Vul alsnog het juiste antwoord in."
 
 
-def waiting_too_long(player): # Seyit timer
+def waiting_too_long(player):
     participant = player.participant
-
-    import time
-    # print('Timer waited time =', (time.time() - participant.wait_page_arrival), 'seconden voor player', player.id_in_group)
-    # assumes you set wait_page_arrival in PARTICIPANT_FIELDS.
-    return (time.time() - participant.wait_page_arrival) > 5*60 # tijd in seconden waarna de wait_page er mee stopt
+    return (time.time() - participant.wait_page_arrival) > 5 * 60
 
 
-def group_by_arrival_time_method(subsession, waiting_players): # Seyit timer
-    # print('\nWe zitten nu in group_by_arrival_time_method')
-    # print('Hoeveel zijn er aan het wachten?: ', len(waiting_players))
-
+def group_by_arrival_time_method(subsession, waiting_players):
     if len(waiting_players) >= 3:
         return waiting_players[:3]
-
     for player in waiting_players:
-        # print('En de nummers van de players zijn: ', player.id_in_group)
         if waiting_too_long(player):
-            # print('Ik wacht te lang en ik ben player: ', player.id_in_group, '\n')
             player.participant.leftover = True
 
 
-# FUNCTIONS
-# PAGES
-# FUNCTIONS
 # PAGES
 class Waitforgroup(WaitPage):
     title_text = "Koppelen aan deelnemers"
     body_text = "Wacht alstublieft enkele minuten op andere deelnemers."
     group_by_arrival_time = True
     startwp_timer = 5 * 60
-    use_task = False
 
-    # #@staticmethod
-    # def get_players_for_group(player: Player, waiting_players):
-    #     positions = iter(C.POSITIONS)
-    #     active_players = [
-    #         p for p in waiting_players if p.participant._current_page_name == 'Waitforgroup'
-    #     ]
-    #     if len(active_players) >= C.PLAYERS_PER_GROUP:
-    #         if not session.config['earned']:
-    #             for p in active_players:
-    #                 p.position = next(positions)
-    #                 if p.position == 'A':
-    #                     p.resources = session.config['resources_player_A']
-    #                 elif p.position == 'B':
-    #                     p.resources = session.config['resources_player_B']
-    #                 elif p.position == 'C':
-    #                     p.resources = session.config['resources_player_C']
-    #         return active_players
-    # Seyit
-
-    #@staticmethod
-    # def group_by_arrival_time_method(subsession, waiting_players): # Seyit, vervanging van hierboven
-    #     print('in group_by_arrival_time_method')
-    #     m_players = [p for p in waiting_players if p.participant.category == 'M']
-    #     f_players = [p for p in waiting_players if p.participant.category == 'F']
-
-    #     if len(m_players) >= 2 and len(f_players) >= 2:
-    #         print('about to create a group')
-    #         return [m_players[0], m_players[1], f_players[0], f_players[1]]
-    #     print('not enough players yet to create a group')
-
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
+        participant = player.participant
         if (
             participant.end_game == False
             and player.round_number == 1
@@ -853,13 +1072,13 @@ class Waitforgroup(WaitPage):
 
 
 class Groupingconfirmation(Page):
-    #@staticmethod
+    @staticmethod
     def vars_for_template(player: Player):
         return vars_for_template(player)
 
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
+        participant = player.participant
         if (
             participant.end_game == False
             and player.round_number == 1
@@ -870,290 +1089,29 @@ class Groupingconfirmation(Page):
         else:
             return False
 
-    #@staticmethod
+    @staticmethod
     def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
+        session = player.session
+        return session.config["timeout_time"]
 
-    #@staticmethod
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
+        participant = player.participant
         if timeout_happened:
             participant.kicked = True
         participant.grouped = True
         leftover_check(player)
 
 
-class Sliderinstructions(Page):
-    #@staticmethod
-    def vars_for_template(player: Player):
-        return vars_for_template(player)
-
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        session = player.session #Pradeep
-        if (
-            participant.end_game == False
-            and player.round_number == 1
-            and session.config['earned'] == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        else:
-            return False
-
-    #@staticmethod
-    def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
-
-    #@staticmethod
-    def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
-        if timeout_happened:
-            participant.kicked = True
-        leftover_check(player)
-
-    #@staticmethod
-    def vars_for_template(player: Player):
-        return vars_for_template(player)
-
-
-class Slider(Page):
-    #@staticmethod
-    def vars_for_template(player: Player):
-        return vars_for_template(player)
-
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        session = player.session #Pradeep
-        if (
-            participant.end_game == False
-            and player.round_number == 1
-            and session.config['earned'] == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        else:
-            return False
-
-    #@staticmethod
-    def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['slider_time']
-
-    form_model = 'player'
-
-    #@staticmethod
-    def get_form_fields(player: Player):
-        return ['slider{}'.format(i) for i in range(1, 22)]
-
-
-class EndRound1(Page):
-    #@staticmethod
-    def vars_for_template(player: Player):
-        return vars_for_template(player)
-
-    #@staticmethod
-    def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
-
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        session = player.session #Pradeep
-        if (
-            participant.end_game == False
-            and player.round_number == 1
-            and session.config['earned'] == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        else:
-            return False
-
-
-class Slider2(Page):
-    #@staticmethod
-    def vars_for_template(player: Player):
-        return vars_for_template(player)
-
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        session = player.session #Pradeep
-        if (
-            participant.end_game == False
-            and player.round_number == 1
-            and session.config['earned'] == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        else:
-            return False
-
-    #@staticmethod
-    def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['slider_time']
-
-    form_model = 'player'
-
-    #@staticmethod
-    def get_form_fields(player: Player):
-        return ['slider{}'.format(i) for i in range(22, 43)]
-
-
-class EndRound2(Page):
-    #@staticmethod
-    def vars_for_template(player: Player):
-        return vars_for_template(player)
-
-    #@staticmethod
-    def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
-
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        session = player.session #Pradeep
-        if (
-            participant.end_game == False
-            and player.round_number == 1
-            and session.config['earned'] == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        else:
-            return False
-
-
-class Slider3(Page):
-    #@staticmethod
-    def vars_for_template(player: Player):
-        return vars_for_template(player)
-
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        session = player.session #Pradeep
-        if (
-            participant.end_game == False
-            and player.round_number == 1
-            and session.config['earned'] == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        else:
-            return False
-
-    #@staticmethod
-    def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['slider_time']
-
-    form_model = 'player'
-
-    #@staticmethod
-    def get_form_fields(player: Player):
-        return ['slider{}'.format(i) for i in range(43, 64)]
-
-    #@staticmethod
-    def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
-        player.score = 0
-        leftover_check(player)
-        sliders = [
-            player.slider1,
-            player.slider2,
-            player.slider3,
-            player.slider4,
-            player.slider5,
-            player.slider6,
-            player.slider7,
-            player.slider8,
-            player.slider9,
-            player.slider10,
-            player.slider11,
-            player.slider12,
-            player.slider13,
-            player.slider14,
-            player.slider15,
-            player.slider16,
-            player.slider17,
-            player.slider18,
-            player.slider19,
-            player.slider20,
-            player.slider21,
-            player.slider22,
-            player.slider23,
-            player.slider24,
-            player.slider25,
-            player.slider26,
-            player.slider27,
-            player.slider28,
-            player.slider29,
-            player.slider30,
-            player.slider31,
-            player.slider32,
-            player.slider33,
-            player.slider34,
-            player.slider35,
-            player.slider36,
-            player.slider37,
-            player.slider38,
-            player.slider39,
-            player.slider40,
-            player.slider41,
-            player.slider42,
-            player.slider43,
-            player.slider44,
-            player.slider45,
-            player.slider46,
-            player.slider47,
-            player.slider48,
-            player.slider49,
-            player.slider50,
-            player.slider51,
-            player.slider52,
-            player.slider53,
-            player.slider54,
-            player.slider55,
-            player.slider56,
-            player.slider57,
-            player.slider58,
-            player.slider59,
-            player.slider60,
-            player.slider61,
-            player.slider62,
-            player.slider63,
-        ]
-        for slider in sliders:
-            if slider == 50:
-                player.score += 1
-        participant.score = player.score
-
-
 class Waitforparticipants(WaitPage):
-    #@staticmethod
-    #@staticmethod
+
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        session = player.session #Pradeep
+        participant = player.participant
+        session = player.session
         if (
             participant.end_game == False
             and player.round_number == 1
-            and session.config['earned'] == True
             and participant.grouped == True
             and participant.kicked == False
             and participant.leftover == False
@@ -1163,93 +1121,80 @@ class Waitforparticipants(WaitPage):
             return False
 
     title_text = "Positie toewijzing"
-    body_text = "U zal willekeurig een positie toegewezen krijgen"
+    body_text = "U krijgt willekeurig een positie toegewezen."
 
-    #@staticmethod
-    #@staticmethod
+    @staticmethod
     def after_all_players_arrive(group: Group):
-        session = group.session # Seyit
-        scores = []
+        session = group.session
         p1 = group.get_player_by_id(1)
         p2 = group.get_player_by_id(2)
         p3 = group.get_player_by_id(3)
-        for p in group.get_players():
-            try: # Seyit
-                p.score
-            except:
-                p.score = 0
-            summary = (p.id_in_group, p.score)
-            scores.append(summary)
-        sorted_scores = sorted(scores, key=lambda tup: tup[1], reverse=True)
-        A = sorted_scores[0]
-        B = sorted_scores[1]
-        C = sorted_scores[2]
-        if A[0] == 1:
-            p1.position = 'A'
-            p1.resources = session.config['resources_player_A']
-        elif A[0] == 2:
-            p2.position = 'A'
-            p2.resources = session.config['resources_player_A']
-        elif A[0] == 3:
-            p3.position = 'A'
-            p3.resources = session.config['resources_player_A']
-        if B[0] == 1:
-            p1.position = 'B'
-            p1.resources = session.config['resources_player_B']
-        elif B[0] == 2:
-            p2.position = 'B'
-            p2.resources = session.config['resources_player_B']
-        elif B[0] == 3:
-            p3.position = 'B'
-            p3.resources = session.config['resources_player_B']
-        if C[0] == 1:
-            p1.position = 'C'
-            p1.resources = session.config['resources_player_C']
-        elif C[0] == 2:
-            p2.position = 'C'
-            p2.resources = session.config['resources_player_C']
-        elif C[0] == 3:
-            p3.position = 'C'
-            p3.resources = session.config['resources_player_C']
+
+        # Assign roles and resources
+        p1.position = "A"
+        p1.resources = session.config["resources_player_A"]
+
+        p2.position = "B"
+        p2.resources = session.config["resources_player_B"]
+
+        p3.position = "C"
+        p3.resources = session.config["resources_player_C"]
 
 
-class PositionAssignment(Page):
-    #@staticmethod
+        # Assign SVO scores based on preload_csv
+        # NOTE:
+        # This code assumes that an external CSV file is provided.
+        # If no CSV file is supplied, or if the expected columns are missing,
+        # the code will raise an error. Users who wish to use this functionality
+        # should adapt the file path, identifier column, and SVO column
+        # to match their own data and oTree setup.
+        #
+        # The CSV is expected to contain:
+        #  - 'participant_id': an identifier matching the participant in oTree
+        #  - 'svo_score': the participant's SVO value
+
+        with open(preload_csv, encoding='utf-8-sig', mode='r') as file:
+            csv_reader = list(csv.DictReader(file, delimiter=";"))
+            for p in group.get_players(): 
+                for row in csv_reader: 
+                    if row['participant_id'] == p.participant.label: 
+                        svo_score = row['svo_score']
+                        if svo_score is not None and svo_score != "":
+                            p.svo_score = float(svo_score.replace(',', '.'))
+                        else:                
+                            print(f"For {p.participant} No SVO score found for participant. Initial value is kept.")
+                        break
+
+        # Set experimental condition 50/50 based on group ID.
+        group.is_experimental = group.id_in_subsession % 2 == 0
+
+
+class SVO_Assigned(Page):
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        session = player.session #Pradeep
-        if (
-            participant.end_game == False
-            and participant.kicked == False
-            and participant.leftover == False
-            and session.config['earned'] == True
-            and player.round_number == 1
-        ):
-            return True
+        # If it is on the first round, assign the SVO scores
+        if player.round_number == 1:
+            player.gauge_plot_svo = create_gauge(player.svo_score)  
         else:
-            return False
+            player.svo_score = player.in_round(1).svo_score  # Assign the first rounds' svo score so that it does not reset for each round
+            player.gauge_plot_svo = player.in_round(1).gauge_plot_svo
+            player.position = player.in_round(1).position
+            # Retreive other players' SVO assignments too
+            for other_player in player.get_others_in_group():
+                other_player.svo_score = other_player.in_round(1).svo_score  # Assign the first rounds svo score
+                other_player.gauge_plot_svo = other_player.in_round(1).gauge_plot_svo  # Assign the first rounds gauge plot
+                other_player.position = other_player.in_round(1).position
+        return False
 
-    #@staticmethod
-    def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
-
-    #@staticmethod
-    def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
-        if timeout_happened:
-            participant.kicked = True
-        leftover_check(player)
-
-    #@staticmethod
+    @staticmethod
     def vars_for_template(player: Player):
         return vars_for_template(player)
 
 
 class AssignedPosition(Page):
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
+        participant = player.participant
         if (
             participant.end_game == False
             and player.round_number == 1
@@ -1260,31 +1205,27 @@ class AssignedPosition(Page):
         else:
             return False
 
-    #@staticmethod
+    @staticmethod
     def vars_for_template(player: Player):
         return vars_for_template(player)
 
-    #@staticmethod
+    @staticmethod
     def get_timeout_seconds(player: Player):
-        session = player.session # Seyit
-        return session.config['timeout_time']
+        session = player.session
+        return session.config["timeout_time"]
 
-    #@staticmethod
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
+        participant = player.participant
         if timeout_happened:
             participant.kicked = True
         leftover_check(player)
 
 
-class InstructionsCoalitions(Page):
-    #@staticmethod
-    def vars_for_template(player: Player):
-        return vars_for_template(player)
-
-    #@staticmethod
+class AssignedPosition2(Page):
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
+        participant = player.participant
         if (
             participant.end_game == False
             and player.round_number == 1
@@ -1295,29 +1236,33 @@ class InstructionsCoalitions(Page):
         else:
             return False
 
-    #@staticmethod
-    def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
+    @staticmethod
+    def vars_for_template(player: Player):
+        return vars_for_template(player)
 
-    #@staticmethod
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        session = player.session
+        return session.config["timeout_time"]
+
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
+        participant = player.participant
         if timeout_happened:
             participant.kicked = True
         leftover_check(player)
 
 
 class ComprehensionCheck(Page):
-    form_model = 'player'
-    form_fields = ['comprehension_position']
+    form_model = "player"
+    form_fields = ["comprehension_position"]
 
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        session = player.session # Seyit
+        participant = player.participant
+        session = player.session
         if (
-            session.config['comprehension_check'] == True
+            session.config["comprehension_check"] == True
             and player.round_number == 1
             and participant.kicked == False
             and participant.leftover == False
@@ -1326,34 +1271,35 @@ class ComprehensionCheck(Page):
         else:
             return False
 
-    #@staticmethod
+    @staticmethod
     def vars_for_template(player: Player):
         vars = vars_for_template(player)
-        vars.update({'position_label': "Welk bedrijf vertegenwoordigt u?"})
+        vars.update({"position_label": "Welk bedrijf vertegenwoordigt u?"})
         return vars
 
-    #@staticmethod
+    @staticmethod
     def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
+        session = player.session
+        return session.config["timeout_time"]
 
-    #@staticmethod
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
+        participant = player.participant
         if timeout_happened:
             participant.kicked = True
         leftover_check(player)
+
 
 class ComprehensionCheck1(Page):
-    form_model = 'player'
-    form_fields = ['comprehension_resources']
+    form_model = "player"
+    form_fields = ["comprehension_resources"]
 
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        session = player.session # Seyit
+        participant = player.participant
+        session = player.session
         if (
-            session.config['comprehension_check'] == True
+            session.config["comprehension_check"] == True
             and player.round_number == 1
             and participant.kicked == False
             and participant.leftover == False
@@ -1362,34 +1308,37 @@ class ComprehensionCheck1(Page):
         else:
             return False
 
-    #@staticmethod
+    @staticmethod
     def vars_for_template(player: Player):
         vars = vars_for_template(player)
-        vars.update({'resources_label': "Hoeveel ton vervoert uw bedrijf iedere dag naar Parijs?"})
+        vars.update(
+            {"resources_label": "Hoeveel ton vervoert uw bedrijf elke dag naar Parijs?"}
+        )
         return vars
 
-    #@staticmethod
+    @staticmethod
     def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
+        session = player.session
+        return session.config["timeout_time"]
 
-    #@staticmethod
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
+        participant = player.participant
         if timeout_happened:
             participant.kicked = True
         leftover_check(player)
 
-class ComprehensionCheck2(Page):
-    form_model = 'player'
-    form_fields = ['comprehension_bonus']
 
-    #@staticmethod
+class ComprehensionCheck2(Page):
+    form_model = "player"
+    form_fields = ["comprehension_bonus"]
+
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        session = player.session # Seyit
+        participant = player.participant
+        session = player.session
         if (
-            session.config['comprehension_check'] == True
+            session.config["comprehension_check"] == True
             and player.round_number == 1
             and participant.kicked == False
             and participant.leftover == False
@@ -1398,29 +1347,29 @@ class ComprehensionCheck2(Page):
         else:
             return False
 
-    #@staticmethod
+    @staticmethod
     def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
+        session = player.session
+        return session.config["timeout_time"]
 
-    #@staticmethod
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
+        participant = player.participant
         if timeout_happened:
             participant.kicked = True
         leftover_check(player)
 
 
 class ComprehensionCheck3(Page):
-    form_model = 'player'
-    form_fields = ['comprehension_coalitions']
+    form_model = "player"
+    form_fields = ["comprehension_coalitions"]
 
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        session = player.session #Pradeep
+        participant = player.participant
+        session = player.session
         if (
-            session.config['comprehension_check'] == True
+            session.config["comprehension_check"] == True
             and player.round_number == 1
             and participant.kicked == False
             and participant.leftover == False
@@ -1429,108 +1378,171 @@ class ComprehensionCheck3(Page):
         else:
             return False
 
-    #@staticmethod
+    @staticmethod
     def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
+        session = player.session
+        return session.config["timeout_time"]
 
-    #@staticmethod
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
+        participant = player.participant
         if timeout_happened:
             participant.kicked = True
         leftover_check(player)
 
 
-class ManipulationCheck2control(Page):
-    #@staticmethod
+class T2_A(Page):
+    """
+    Trust measurement page after information, the description depends on the condition (check the html). Speficic to each player.
+    """
+
+    form_model = "player"
+    form_fields = [
+        "trust_pre_1_A_to_B",
+        "trust_pre_2_A_to_B",
+        "trust_pre_3_A_to_B",
+        "trust_pre_4_A_to_B",
+        "trust_pre_5_A_to_B",
+        "trust_pre_6_A_to_B",
+        "trust_pre_7_A_to_B",
+        "trust_pre_8_A_to_B",
+        "trust_pre_1_A_to_C",
+        "trust_pre_2_A_to_C",
+        "trust_pre_3_A_to_C",
+        "trust_pre_4_A_to_C",
+        "trust_pre_5_A_to_C",
+        "trust_pre_6_A_to_C",
+        "trust_pre_7_A_to_C",
+        "trust_pre_8_A_to_C",
+    ]
+
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
-        if (
-            participant.end_game == False
-            and group.coalition_formed == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        elif (
-            subsession.round_number == C.NUM_ROUNDS
-            and participant.end_game == False
-        ):
-            return True
-        else:
-            return False
-
-    form_model = 'player'
-    form_fields = ['manipulation_check2control']
-
-
-class ManipulationCheck2controlBudget(Page):
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
-        if (
-            participant.end_game == False
-            and group.coalition_formed == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        elif (
-            subsession.round_number == C.NUM_ROUNDS
-            and participant.end_game == False
-        ):
-            return True
-        else:
-            return False
-
-    form_model = 'player'
-    form_fields = ['manipulation_check2controlbudget']
-
-
-class BargainingStarts(Page):
-    #@staticmethod
-    def vars_for_template(player: Player):
-        return vars_for_template(player)
-
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        if (
-            participant.end_game == False
+        return (
+            not player.participant.kicked
             and player.round_number == 1
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        else:
-            return False
+            and player.participant.kicked == False
+            and player.participant.leftover == False
+            and player.position == "A"
+        )
 
-    #@staticmethod
+    @staticmethod
     def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
+        session = player.session
+        return session.config["timeout_time"]
 
-    #@staticmethod
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
+        participant = player.participant
+        if timeout_happened:
+            participant.kicked = True
+        leftover_check(player)
+
+
+class T2_B(Page):
+    """
+    Trust measurement page after information, the description depends on the condition (check the html). Speficic to each player.
+    """
+
+    form_model = "player"
+    form_fields = [
+        "trust_pre_1_B_to_A",
+        "trust_pre_2_B_to_A",
+        "trust_pre_3_B_to_A",
+        "trust_pre_4_B_to_A",
+        "trust_pre_5_B_to_A",
+        "trust_pre_6_B_to_A",
+        "trust_pre_7_B_to_A",
+        "trust_pre_8_B_to_A",
+        "trust_pre_1_B_to_C",
+        "trust_pre_2_B_to_C",
+        "trust_pre_3_B_to_C",
+        "trust_pre_4_B_to_C",
+        "trust_pre_5_B_to_C",
+        "trust_pre_6_B_to_C",
+        "trust_pre_7_B_to_C",
+        "trust_pre_8_B_to_C",
+    ]
+
+    @staticmethod
+    def is_displayed(player: Player):
+        return (
+            not player.participant.kicked
+            and player.round_number == 1
+            and player.participant.kicked == False
+            and player.participant.leftover == False
+            and player.position == "B"
+        )
+
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        session = player.session
+        return session.config["timeout_time"]
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        participant = player.participant
+        if timeout_happened:
+            participant.kicked = True
+        leftover_check(player)
+
+
+class T2_C(Page):
+    """
+    Trust measurement page after information, the description depends on the condition (check the html). Speficic to each player.
+    """
+
+    form_model = "player"
+    form_fields = [
+        "trust_pre_1_C_to_A",
+        "trust_pre_2_C_to_A",
+        "trust_pre_3_C_to_A",
+        "trust_pre_4_C_to_A",
+        "trust_pre_5_C_to_A",
+        "trust_pre_6_C_to_A",
+        "trust_pre_7_C_to_A",
+        "trust_pre_8_C_to_A",
+        "trust_pre_1_C_to_B",
+        "trust_pre_2_C_to_B",
+        "trust_pre_3_C_to_B",
+        "trust_pre_4_C_to_B",
+        "trust_pre_5_C_to_B",
+        "trust_pre_6_C_to_B",
+        "trust_pre_7_C_to_B",
+        "trust_pre_8_C_to_B",
+    ]
+
+    @staticmethod
+    def is_displayed(player: Player):
+        return (
+            not player.participant.kicked
+            and player.round_number == 1
+            and player.participant.kicked == False
+            and player.participant.leftover == False
+            and player.position == "C"
+        )
+
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        session = player.session
+        return session.config["timeout_time"]
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        participant = player.participant
         if timeout_happened:
             participant.kicked = True
         leftover_check(player)
 
 
 class NewRound(Page):
-    #@staticmethod
+    @staticmethod
     def vars_for_template(player: Player):
         return vars_for_template(player)
 
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
+        participant = player.participant
         if (
             participant.end_game == False
             and player.round_number > 1
@@ -1541,41 +1553,51 @@ class NewRound(Page):
         else:
             return False
 
-    #@staticmethod
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
-        group = player.group # Seyit
+        participant = player.participant
+        group = player.group
+
+        # Re-assign treatment condition from previous round 
+        prev_round_group = group.in_round(
+            group.round_number - 1
+        )  # Retrieve value from group object from the previous round
+        group.is_experimental = (
+            prev_round_group.is_experimental
+        )  # Set value for current group object
+
         for player in group.get_players():
             prev_player = player.in_round(1)
             player.position = prev_player.position
             player.resources = prev_player.resources
             player.completion_code = prev_player.completion_code
+
         leftover_check(player)
         if timeout_happened:
             participant.kicked = True
 
-    #@staticmethod
+    @staticmethod
     def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
+        session = player.session
+        return session.config["timeout_time"]
 
 
 class PhaseI(Page):
-    #@staticmethod
+    @staticmethod
     def vars_for_template(player: Player):
         return vars_for_template(player)
 
-    form_model = 'player'
+    form_model = "player"
     form_fields = [
-        'proposed_coalition',
-        'allocate_to_player_A',
-        'allocate_to_player_B',
-        'allocate_to_player_C',
+        "proposed_coalition",
+        "allocate_to_player_A",
+        "allocate_to_player_B",
+        "allocate_to_player_C",
     ]
 
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
+        participant = player.participant
         if (
             participant.end_game == False
             and participant.kicked == False
@@ -1585,28 +1607,28 @@ class PhaseI(Page):
         else:
             return False
 
-    #@staticmethod
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
-        group = player.group # Seyit
+        participant = player.participant
+        group = player.group
         for p in group.get_players():
-            try: # Seyit
+            try:
                 p.proposed_coalition
             except:
-                p.proposed_coalition = ''
+                p.proposed_coalition = ""
                 p.allocate_to_player_A = 0
                 p.allocate_to_player_B = 0
                 p.allocate_to_player_C = 0
 
-            if p.proposed_coalition == 'BC':
+            if p.proposed_coalition == "BC":
                 p.allocate_to_player_A = 0
-            if p.proposed_coalition == 'AC':
+            if p.proposed_coalition == "AC":
                 p.allocate_to_player_B = 0
-            if p.proposed_coalition == 'AB':
+            if p.proposed_coalition == "AB":
                 p.allocate_to_player_C = 0
-            if p.position == 'A':
+            if p.position == "A":
                 group.proposed_coalition_player_A = p.proposed_coalition
-                try: # seyit last problem
+                try:
                     group.allocation_A_to_A = p.allocate_to_player_A
                 except:
                     group.allocation_A_to_A = 0
@@ -1618,9 +1640,9 @@ class PhaseI(Page):
                     group.allocation_A_to_C = p.allocate_to_player_C
                 except:
                     group.allocation_A_to_C = 0
-            elif p.position == 'B':
+            elif p.position == "B":
                 group.proposed_coalition_player_B = p.proposed_coalition
-                try: # seyit last problem
+                try:
                     group.allocation_B_to_A = p.allocate_to_player_A
                 except:
                     group.allocation_B_to_A = 0
@@ -1632,9 +1654,9 @@ class PhaseI(Page):
                     group.allocation_B_to_C = p.allocate_to_player_C
                 except:
                     group.allocation_B_to_C = 0
-            elif p.position == 'C':
+            elif p.position == "C":
                 group.proposed_coalition_player_C = p.proposed_coalition
-                try: # seyit last problem
+                try:
                     group.allocation_C_to_A = p.allocate_to_player_A
                 except:
                     group.allocation_C_to_A = 0
@@ -1650,20 +1672,20 @@ class PhaseI(Page):
             participant.kicked = True
         leftover_check(player)
 
-    #@staticmethod
+    @staticmethod
     def get_timeout_seconds(player: Player):
-        session = player.session # Seyit
-        return session.config['timeout_time']
+        session = player.session
+        return session.config["timeout_time"]
 
 
 class WaitForOffers(WaitPage):
     title_text = "Wachten op bod andere deelnemers"
     body_text = "Wacht tot alle deelnemers een bod hebben gedaan. Dit kan even duren."
+    startwp_timer = 5 * 60
 
-    #@staticmethod
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
+        participant = player.participant
         if (
             participant.end_game == False
             and participant.kicked == False
@@ -1673,40 +1695,23 @@ class WaitForOffers(WaitPage):
         else:
             return False
 
-
-class OffersMade(Page):
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        if (
-            participant.end_game == False
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        else:
-            return False
-
-    #@staticmethod
-    def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
-
-    #@staticmethod
-    def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
-        if timeout_happened:
-            participant.kicked = True
-        leftover_check(player)
+    def after_all_players_arrive(group: Group):
+        # If any of the players are arrived the wait page without a proposed coalition, assign others to leftovers
+        for player in group.get_players():
+            if player.participant.kicked:
+                # Assign other players to leftovers
+                other_players = player.get_others_in_group()
+                for other_player in other_players:
+                    other_player.participant.leftover = True
 
 
 class PhaseII(Page):
-    form_model = 'player'
-    form_fields = ['selected_coalition']
+    form_model = "player"
+    form_fields = ["selected_coalition"]
 
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
+        participant = player.participant
         if (
             participant.end_game == False
             and participant.kicked == False
@@ -1716,10 +1721,10 @@ class PhaseII(Page):
         else:
             return False
 
-    #@staticmethod
+    @staticmethod
     def vars_for_template(player: Player):
-        session = player.session # Seyit
-        group = player.group # Seyit
+        session = player.session
+        group = player.group
         vars = vars_for_template(player)
         offers = dict()
         for p in group.get_players():
@@ -1735,26 +1740,18 @@ class PhaseII(Page):
                 )
                 summary_wo_id = summary[:-1]
                 offers[summary_wo_id] = summary
-        if session.config['select_none']:
-            offers['tuple'] = (
-                "Select this option if you do not wish to select one of the above offers. You will not be able to form a coalition this round.",
-                "No",
-                99,
-                99,
-                99,
-                'None',
-            )
+
         vars.update({"offers": sorted(offers.values())})
         return vars
 
-    #@staticmethod
+    @staticmethod
     def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
+        session = player.session
+        return session.config["timeout_time"]
 
-    #@staticmethod
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
+        participant = player.participant
         if timeout_happened:
             participant.kicked = True
         leftover_check(player)
@@ -1762,12 +1759,14 @@ class PhaseII(Page):
 
 class WaitForSelection(WaitPage):
     title_text = "Wachten op selectie"
-    body_text = "Wacht tot alle deelnemers een voorstel hebben gekozen. Dit kan even duren."
+    body_text = (
+        "Wacht tot alle deelnemers een voorstel hebben gekozen. Dit kan even duren."
+    )
+    startwp_timer = 5 * 60
 
-    #@staticmethod
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
+        participant = player.participant
         if (
             participant.end_game == False
             and participant.grouped == True
@@ -1778,189 +1777,204 @@ class WaitForSelection(WaitPage):
         else:
             return False
 
-    #@staticmethod
-    #@staticmethod
+    @staticmethod
     def after_all_players_arrive(group: Group):
-        session = group.session # Seyit
-        players = group.get_players()
-        myloop = 0
-        for p in players:
-            myloop+=1
-            try: # Seyit xxxxx
-                p.selected_coalition
-            except:
-                p.selected_coalition = 'None'
 
-            if p.selected_coalition != 'None':
-                cs = p.selected_coalition # Seyit
-                try: # Seyit xxxxx
-                    p.selected_coalition_name = group.get_player_by_id(cs).proposed_coalition
-                except:
-                    p.selected_coalition_name = 'None'
-                try: # Seyit xxxxx
-                    p.selected_coalition_allocation_A = group.get_player_by_id(cs).allocate_to_player_A
-                except:
-                    p.selected_coalition_allocation_A = 0
-                try: # Seyit xxxxx
-                    p.selected_coalition_allocation_B = group.get_player_by_id(cs).allocate_to_player_B
-                except:
-                    p.selected_coalition_allocation_B = 0
-                try: # Seyit xxxxx
-                    p.selected_coalition_allocation_C = group.get_player_by_id(cs).allocate_to_player_C
-                except:
-                    p.selected_coalition_allocation_C = 0
-            elif p.selected_coalition == 'None':
-                p.selected_coalition_name = 'None'
-                p.selected_coalition_allocation_A = 0 #None Seyit xxxxx
-                p.selected_coalition_allocation_B = 0 #None Seyit xxxxx
-                p.selected_coalition_allocation_C = 0 #None Seyit xxxxx
-            if p.position == 'A':
-                group.selected_coalition_name_player_A = p.selected_coalition_name
-                group.selected_coalition_allocation_A_player_A = p.selected_coalition_allocation_A
-                group.selected_coalition_allocation_B_player_A = p.selected_coalition_allocation_B
-                group.selected_coalition_allocation_C_player_A = p.selected_coalition_allocation_C
-            elif p.position == 'B':
-                group.selected_coalition_name_player_B = p.selected_coalition_name
-                group.selected_coalition_allocation_A_player_B = p.selected_coalition_allocation_A
-                group.selected_coalition_allocation_B_player_B = p.selected_coalition_allocation_B
-                group.selected_coalition_allocation_C_player_B = p.selected_coalition_allocation_C
-            elif p.position == 'C':
-                group.selected_coalition_name_player_C = p.selected_coalition_name
-                group.selected_coalition_allocation_A_player_C = p.selected_coalition_allocation_A
-                group.selected_coalition_allocation_B_player_C = p.selected_coalition_allocation_B
-                group.selected_coalition_allocation_C_player_C = p.selected_coalition_allocation_C
-        list_AB = []
-        list_AC = []
-        list_BC = []
-        list_ABC = []
-        list_none = []
-        for p in players:
-            if p.selected_coalition_name == "AB":
-                list_AB.append(p.position)
-            if p.selected_coalition_name == "AC":
-                list_AC.append(p.position)
-            if p.selected_coalition_name == "BC":
-                list_BC.append(p.position)
-            if p.selected_coalition_name == "ABC":
-                list_ABC.append(p.position)
-            if p.selected_coalition_name == None:
-                list_none.append(p.position)
-        if (
-            len(list_AB) == 2
-            and group.selected_coalition_allocation_A_player_A
-            == group.selected_coalition_allocation_A_player_B
-        ):
+        validity_status = True
+        # If any of the players are arrived the wait page without a proposed coalition, assign others to leftovers
+        for player in group.get_players():
+        
+            if player.field_maybe_none('selected_coalition') is None: 
+                player.selected_coalition = ""
+        
+            if player.selected_coalition == "":
+                # Assign other players to leftovers
+                other_players = player.get_others_in_group()
+                for other_player in other_players:
+                    other_player.participant.leftover = True
+                    validity_status = False
+
+                    # Assign all coalition related variables to default values if the coalition is not valid
+                    group.proposed_coalition_player_A = ""
+                    group.proposed_coalition_player_B = ""
+                    group.proposed_coalition_player_C = ""
+                    group.allocation_A_to_A = 0
+                    group.allocation_A_to_B = 0
+                    group.allocation_A_to_C = 0
+                    group.allocation_B_to_A = 0
+                    group.allocation_B_to_B = 0
+                    group.allocation_B_to_C = 0
+                    group.allocation_C_to_A = 0
+                    group.allocation_C_to_B = 0
+                    group.allocation_C_to_C = 0
+                    group.selected_coalition_name_player_A = ""
+                    group.selected_coalition_name_player_B = ""
+                    group.selected_coalition_name_player_C = ""
+                    group.selected_coalition_allocation_A_player_A = 0
+                    group.selected_coalition_allocation_B_player_A = 0
+                    group.selected_coalition_allocation_C_player_A = 0
+                    group.selected_coalition_allocation_A_player_B = 0
+                    group.selected_coalition_allocation_B_player_B = 0
+                    group.selected_coalition_allocation_C_player_B = 0
+                    group.selected_coalition_allocation_A_player_C = 0
+                    group.selected_coalition_allocation_B_player_C = 0
+                    group.selected_coalition_allocation_C_player_C = 0
+
+        # If the all players arrive this point without any problems
+        if validity_status:
+
+            session = group.session
+            players = group.get_players()
+
+            for p in players:
+
+                cs = p.selected_coalition
+                p.selected_coalition_name = group.get_player_by_id(
+                    cs
+                ).proposed_coalition
+                p.selected_coalition_allocation_A = group.get_player_by_id(
+                    cs
+                ).allocate_to_player_A
+                p.selected_coalition_allocation_B = group.get_player_by_id(
+                    cs
+                ).allocate_to_player_B
+                p.selected_coalition_allocation_C = group.get_player_by_id(
+                    cs
+                ).allocate_to_player_C
+
+                if p.position == "A":
+                    group.selected_coalition_name_player_A = p.selected_coalition_name
+                    group.selected_coalition_allocation_A_player_A = (
+                        p.selected_coalition_allocation_A
+                    )
+                    group.selected_coalition_allocation_B_player_A = (
+                        p.selected_coalition_allocation_B
+                    )
+                    group.selected_coalition_allocation_C_player_A = (
+                        p.selected_coalition_allocation_C
+                    )
+                elif p.position == "B":
+                    group.selected_coalition_name_player_B = p.selected_coalition_name
+                    group.selected_coalition_allocation_A_player_B = (
+                        p.selected_coalition_allocation_A
+                    )
+                    group.selected_coalition_allocation_B_player_B = (
+                        p.selected_coalition_allocation_B
+                    )
+                    group.selected_coalition_allocation_C_player_B = (
+                        p.selected_coalition_allocation_C
+                    )
+                elif p.position == "C":
+                    group.selected_coalition_name_player_C = p.selected_coalition_name
+                    group.selected_coalition_allocation_A_player_C = (
+                        p.selected_coalition_allocation_A
+                    )
+                    group.selected_coalition_allocation_B_player_C = (
+                        p.selected_coalition_allocation_B
+                    )
+                    group.selected_coalition_allocation_C_player_C = (
+                        p.selected_coalition_allocation_C
+                    )
+            list_AB = []
+            list_AC = []
+            list_BC = []
+            list_ABC = []
+            for p in players:
+                if p.selected_coalition_name == "AB":
+                    list_AB.append(p.position)
+                if p.selected_coalition_name == "AC":
+                    list_AC.append(p.position)
+                if p.selected_coalition_name == "BC":
+                    list_BC.append(p.position)
+                if p.selected_coalition_name == "ABC":
+                    list_ABC.append(p.position)
+
             if (
-                group.selected_coalition_allocation_B_player_A
-                == group.selected_coalition_allocation_B_player_B
+                len(list_AB) == 2
+                and group.selected_coalition_allocation_A_player_A
+                == group.selected_coalition_allocation_A_player_B
             ):
-                print("AB is formed")
-                group.coalition_formed = True
-                group.formed_coalition_name = "AB"
-                group.payoff_A = group.selected_coalition_allocation_A_player_A
-                group.payoff_B = group.selected_coalition_allocation_B_player_B
-                group.payoff_C = 0
-        elif (
-            len(list_AC) == 2
-            and group.selected_coalition_allocation_A_player_A
-            == group.selected_coalition_allocation_A_player_C
-        ):
-            if (
-                group.selected_coalition_allocation_C_player_A
-                == group.selected_coalition_allocation_C_player_C
-            ):
-                print("AC is formed")
-                group.coalition_formed = True
-                group.formed_coalition_name = "AC"
-                group.payoff_A = group.selected_coalition_allocation_A_player_A
-                group.payoff_B = 0
-                group.payoff_C = group.selected_coalition_allocation_C_player_C
-        elif (
-            len(list_BC) == 2
-            and group.selected_coalition_allocation_B_player_B
-            == group.selected_coalition_allocation_B_player_C
-        ):
-            print("First part for B works")
-            if (
-                group.selected_coalition_allocation_C_player_B
-                == group.selected_coalition_allocation_C_player_C
-            ):
-                print("BC is formed")
-                group.coalition_formed = True
-                group.formed_coalition_name = "BC"
-                group.payoff_A = 0
-                group.payoff_B = group.selected_coalition_allocation_B_player_B
-                group.payoff_C = group.selected_coalition_allocation_C_player_C
-        elif (
-            len(list_ABC) == 3
-            and group.selected_coalition_allocation_A_player_A
-            == group.selected_coalition_allocation_A_player_B
-            == group.selected_coalition_allocation_A_player_C
-        ):
-            if (
-                group.selected_coalition_allocation_B_player_A
-                == group.selected_coalition_allocation_B_player_B
-                == group.selected_coalition_allocation_B_player_C
+                if (
+                    group.selected_coalition_allocation_B_player_A
+                    == group.selected_coalition_allocation_B_player_B
+                ):
+                    group.coalition_formed = True
+                    group.formed_coalition_name = "AB"
+                    group.payoff_A = group.selected_coalition_allocation_A_player_A
+                    group.payoff_B = group.selected_coalition_allocation_B_player_B
+                    group.payoff_C = 0
+            elif (
+                len(list_AC) == 2
+                and group.selected_coalition_allocation_A_player_A
+                == group.selected_coalition_allocation_A_player_C
             ):
                 if (
                     group.selected_coalition_allocation_C_player_A
-                    == group.selected_coalition_allocation_C_player_B
                     == group.selected_coalition_allocation_C_player_C
                 ):
                     group.coalition_formed = True
-                    group.formed_coalition_name = "ABC"
+                    group.formed_coalition_name = "AC"
                     group.payoff_A = group.selected_coalition_allocation_A_player_A
+                    group.payoff_B = 0
+                    group.payoff_C = group.selected_coalition_allocation_C_player_C
+            elif (
+                len(list_BC) == 2
+                and group.selected_coalition_allocation_B_player_B
+                == group.selected_coalition_allocation_B_player_C
+            ):
+                if (
+                    group.selected_coalition_allocation_C_player_B
+                    == group.selected_coalition_allocation_C_player_C
+                ):
+                    group.coalition_formed = True
+                    group.formed_coalition_name = "BC"
+                    group.payoff_A = 0
                     group.payoff_B = group.selected_coalition_allocation_B_player_B
                     group.payoff_C = group.selected_coalition_allocation_C_player_C
-        else:
-            group.coalition_formed = False
-            group.payoff_A = 0
-            group.payoff_B = 0
-            group.payoff_C = 0
-        for p in players:
-            if p.position == "A":
-                p.money = group.payoff_A
-                p.payoff = group.payoff_A * session.config['payoff_conversion']
-            if p.position == "B":
-                p.money = group.payoff_B
-                p.payoff = group.payoff_B * session.config['payoff_conversion']
-            if p.position == "C":
-                p.money = group.payoff_C
-                p.payoff = group.payoff_C * session.config['payoff_conversion']
-
-
-class OffersSelected(Page):
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        if (
-            participant.end_game == False
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        else:
-            return False
-
-    #@staticmethod
-    def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
-
-    #@staticmethod
-    def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
-        if timeout_happened:
-            participant.kicked = True
-        leftover_check(player)
+            elif (
+                len(list_ABC) == 3
+                and group.selected_coalition_allocation_A_player_A
+                == group.selected_coalition_allocation_A_player_B
+                == group.selected_coalition_allocation_A_player_C
+            ):
+                if (
+                    group.selected_coalition_allocation_B_player_A
+                    == group.selected_coalition_allocation_B_player_B
+                    == group.selected_coalition_allocation_B_player_C
+                ):
+                    if (
+                        group.selected_coalition_allocation_C_player_A
+                        == group.selected_coalition_allocation_C_player_B
+                        == group.selected_coalition_allocation_C_player_C
+                    ):
+                        group.coalition_formed = True
+                        group.formed_coalition_name = "ABC"
+                        group.payoff_A = group.selected_coalition_allocation_A_player_A
+                        group.payoff_B = group.selected_coalition_allocation_B_player_B
+                        group.payoff_C = group.selected_coalition_allocation_C_player_C
+            else:
+                group.coalition_formed = False
+                group.payoff_A = 0
+                group.payoff_B = 0
+                group.payoff_C = 0
+            for p in players:
+                if p.position == "A":
+                    p.money = group.payoff_A
+                    p.payoff = group.payoff_A * session.config["payoff_conversion"]
+                if p.position == "B":
+                    p.money = group.payoff_B
+                    p.payoff = group.payoff_B * session.config["payoff_conversion"]
+                if p.position == "C":
+                    p.money = group.payoff_C
+                    p.payoff = group.payoff_C * session.config["payoff_conversion"]
 
 
 class PhaseIII_Success(Page):
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        group = player.group # Seyit
-        try: # Seyit
+        participant = player.participant
+        group = player.group
+        try:
             group.coalition_formed
         except:
             group.coalition_formed = 0
@@ -1974,22 +1988,21 @@ class PhaseIII_Success(Page):
         else:
             return False
 
-    #@staticmethod
-    def get_timeout_seconds(player: Player): # Seyit xxxxx
+    @staticmethod
+    def get_timeout_seconds(player: Player):
         session = player.session
-        return session.config['timeout_time']
+        return session.config["timeout_time"]
 
-    #@staticmethod
-    def before_next_page(player: Player, timeout_happened): # Seyit xxxxx
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
         participant = player.participant
         if timeout_happened:
             participant.kicked = True
         leftover_check(player)
 
-
-    #@staticmethod
+    @staticmethod
     def vars_for_template(player: Player):
-        group = player.group # Seyit
+        group = player.group
         offers_dict = dict()
         vars = vars_for_template(player)
         prop_name_A = group.proposed_coalition_player_A
@@ -2118,24 +2131,24 @@ class PhaseIII_Success(Page):
         vars.update({"offers_dictionary": sorted(offers_dict.values())})
         return vars
 
-    #@staticmethod
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        session = player.session # Seyit
-        group = player.group # Seyit
+        session = player.session
+        group = player.group
         for p in group.get_players():
-            if p.position == 'A':
-                p.payoff = group.payoff_A * session.config['payoff_conversion']
-            if p.position == 'B':
-                p.payoff = group.payoff_B * session.config['payoff_conversion']
-            if p.position == 'C':
-                p.payoff = group.payoff_C * session.config['payoff_conversion']
+            if p.position == "A":
+                p.payoff = group.payoff_A * session.config["payoff_conversion"]
+            if p.position == "B":
+                p.payoff = group.payoff_B * session.config["payoff_conversion"]
+            if p.position == "C":
+                p.payoff = group.payoff_C * session.config["payoff_conversion"]
 
 
 class Payoff(Page):
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        group = player.group # Seyit
+        participant = player.participant
+        group = player.group
         if (
             participant.end_game == False
             and group.coalition_formed == True
@@ -2146,20 +2159,20 @@ class Payoff(Page):
         else:
             return False
 
-    #@staticmethod
+    @staticmethod
     def vars_for_template(player: Player):
-        session = player.session # Seyit
+        session = player.session
         vars = vars_for_template(player)
-        timers = session.config['timers']
+        timers = session.config["timers"]
         vars.update({"timers": timers})
         return vars
-
+    
 
 class PhaseIII_Failure(Page):
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        group = player.group # Seyit
+        participant = player.participant
+        group = player.group
         if (
             participant.end_game == False
             and group.coalition_formed == False
@@ -2170,9 +2183,9 @@ class PhaseIII_Failure(Page):
         else:
             return False
 
-    #@staticmethod
+    @staticmethod
     def vars_for_template(player: Player):
-        group = player.group # Seyit
+        group = player.group
         offers_dict = dict()
         vars = vars_for_template(player)
         prop_name_A = group.proposed_coalition_player_A
@@ -2301,408 +2314,173 @@ class PhaseIII_Failure(Page):
         vars.update({"offers_dictionary": sorted(offers_dict.values())})
         return vars
 
-    #@staticmethod
+    @staticmethod
     def get_timeout_seconds(player: Player):
-        session = player.session #Pradeep
-        return session.config['timeout_time']
+        session = player.session
+        return session.config["timeout_time"]
 
-    #@staticmethod
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
+        participant = player.participant
         if timeout_happened:
             participant.kicked = True
         leftover_check(player)
 
 
-class ManipulationCheck1(Page):
-    #@staticmethod
+class T3_A(Page):
+    """
+    Trust measurement page after the negotiation ends. The descriptions change according to the condition. Specific to each player.
+    """
+
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
+        participant = player.participant
+        subsession = player.subsession
+        group = player.group
         if (
             participant.end_game == False
             and group.coalition_formed == True
             and participant.kicked == False
             and participant.leftover == False
+            and player.position == "A"
         ):
             return True
         elif (
             subsession.round_number == C.NUM_ROUNDS
             and participant.end_game == False
+            and participant.kicked == False
+            and participant.leftover == False
+            and player.position == "A"
         ):
             return True
         else:
             return False
 
-    form_model = 'player'
-    form_fields = ['manipulation_check1']
+    form_model = "player"
+    form_fields = [
+        "trust_aft_1_A_to_B",
+        "trust_aft_2_A_to_B",
+        "trust_aft_3_A_to_B",
+        "trust_aft_4_A_to_B",
+        "trust_aft_5_A_to_B",
+        "trust_aft_6_A_to_B",
+        "trust_aft_7_A_to_B",
+        "trust_aft_8_A_to_B",
+        "trust_aft_1_A_to_C",
+        "trust_aft_2_A_to_C",
+        "trust_aft_3_A_to_C",
+        "trust_aft_4_A_to_C",
+        "trust_aft_5_A_to_C",
+        "trust_aft_6_A_to_C",
+        "trust_aft_7_A_to_C",
+        "trust_aft_8_A_to_C",
+    ]
 
 
-class ManipulationCheck2(Page):
-    #@staticmethod
+class T3_B(Page):
+    """
+    Trust measurement page after the negotiation ends. The descriptions change according to the condition. Specific to each player.
+    """
+
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
+        participant = player.participant
+        subsession = player.subsession
+        group = player.group
         if (
             participant.end_game == False
             and group.coalition_formed == True
             and participant.kicked == False
             and participant.leftover == False
+            and player.position == "B"
         ):
             return True
         elif (
             subsession.round_number == C.NUM_ROUNDS
             and participant.end_game == False
+            and participant.kicked == False
+            and participant.leftover == False
+            and player.position == "B"
         ):
             return True
         else:
             return False
 
-    form_model = 'player'
-    form_fields = ['manipulation_check2']
+    form_model = "player"
+    form_fields = [
+        "trust_aft_1_B_to_A",
+        "trust_aft_2_B_to_A",
+        "trust_aft_3_B_to_A",
+        "trust_aft_4_B_to_A",
+        "trust_aft_5_B_to_A",
+        "trust_aft_6_B_to_A",
+        "trust_aft_7_B_to_A",
+        "trust_aft_8_B_to_A",
+        "trust_aft_1_B_to_C",
+        "trust_aft_2_B_to_C",
+        "trust_aft_3_B_to_C",
+        "trust_aft_4_B_to_C",
+        "trust_aft_5_B_to_C",
+        "trust_aft_6_B_to_C",
+        "trust_aft_7_B_to_C",
+        "trust_aft_8_B_to_C",
+    ]
 
 
-class SeatsDeserveA(Page):
-    #@staticmethod
+class T3_C(Page):
+    """
+    Trust measurement page after the negotiation ends. The descriptions change according to the condition. Specific to each player.
+    """
+
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
+        participant = player.participant
+        subsession = player.subsession
+        group = player.group
         if (
             participant.end_game == False
             and group.coalition_formed == True
             and participant.kicked == False
             and participant.leftover == False
+            and player.position == "C"
         ):
             return True
         elif (
             subsession.round_number == C.NUM_ROUNDS
             and participant.end_game == False
-        ):
-            return True
-        else:
-            return False
-
-    form_model = 'player'
-    form_fields = ['seats_deserve']
-
-
-class Motivations(Page):
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
-        if (
-            participant.end_game == False
-            and group.coalition_formed == True
             and participant.kicked == False
             and participant.leftover == False
-        ):
-            return True
-        elif (
-            subsession.round_number == C.NUM_ROUNDS
-            and participant.end_game == False
+            and player.position == "C"
         ):
             return True
         else:
             return False
 
-    form_model = 'player'
-    form_fields = ['motivation_max', 'motivation_harm', 'motivation_deserve']
-
-class IRI_PT_dutch(Page):
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
-        if (
-            participant.end_game == False
-            and group.coalition_formed == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        elif (
-            subsession.round_number == C.NUM_ROUNDS
-            and participant.end_game == False
-        ):
-            return True
-        elif (
-            participant.leftover == True
-            and participant.kicked == False
-            and participant.end_game == False
-            and player.round_number == 1
-        ):
-            return True
-        else:
-            return False
-
-    form_model = 'player'
-    form_fields = ['pt_1', 'pt_2', 'pt_3', 'pt_4', 'pt_5', 'pt_6', 'pt_7']
-
-class IRI_EC_dutch(Page):
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
-        if (
-            participant.end_game == False
-            and group.coalition_formed == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        elif (
-            subsession.round_number == C.NUM_ROUNDS
-            and participant.end_game == False
-        ):
-            return True
-        elif (
-            participant.leftover == True
-            and participant.kicked == False
-            and participant.end_game == False
-            and player.round_number == 1
-        ):
-            return True
-        else:
-            return False
-
-    form_model = 'player'
-    form_fields = ['ec_1', 'ec_2', 'ec_3', 'ec_4', 'ec_5', 'ec_6', 'attention_check', 'ec_8']
-
-
-class Adapted_PT_dutch(Page):
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
-        if (
-            participant.end_game == False
-            and group.coalition_formed == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        elif (
-            subsession.round_number == C.NUM_ROUNDS
-            and participant.end_game == False
-        ):
-            return True
-        else:
-            return False
-
-    form_model = 'player'
-    form_fields = ['apt_1', 'apt_2', 'apt_3', 'apt_4']
-
-class PC_use(Page):
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
-        if (
-            participant.end_game == False
-            and group.coalition_formed == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        elif (
-            subsession.round_number == C.NUM_ROUNDS
-            and participant.end_game == False
-        ):
-            return True
-        elif (
-            participant.leftover == True
-            and participant.kicked == False
-            and participant.end_game == False
-            and player.round_number == 1
-        ):
-            return True
-        else:
-            return False
-
-    form_model = 'player'
-    form_fields = ['pcuse']
-
-class BudgetDeserveA(Page):
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
-        if (
-            participant.end_game == False
-            and group.coalition_formed == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        elif (
-            subsession.round_number == C.NUM_ROUNDS
-            and participant.end_game == False
-        ):
-            return True
-        else:
-            return False
-
-    form_model = 'player'
-    form_fields = ['budget_deserve']
-
-
-class Device(Page):
-    form_model = 'player'
-    form_fields = ['device']
-
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
-        if (
-            participant.end_game == False
-            and group.coalition_formed == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        elif (
-            subsession.round_number == C.NUM_ROUNDS
-            and participant.end_game == False
-        ):
-            return True
-        else:
-            return False
-
-
-class Browser(Page):
-    form_model = 'player'
-    form_fields = ['browser']
-
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
-        if (
-            participant.end_game == False
-            and group.coalition_formed == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        elif (
-            subsession.round_number == C.NUM_ROUNDS
-            and participant.end_game == False
-        ):
-            return True
-        else:
-            return False
-
-
-class Funnel(Page):
-    form_model = 'player'
-    form_fields = ['comment']
-
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
-        if (
-            participant.end_game == False
-            and group.coalition_formed == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        elif (
-            subsession.round_number == C.NUM_ROUNDS
-            and participant.end_game == False
-        ):
-            return True
-        elif (
-            participant.leftover == True
-            and participant.kicked == False
-            and participant.end_game == False
-            and player.round_number == 1
-        ):
-            return True
-        else:
-            return False
-
-class Demographics(Page):
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
-        if (
-            participant.end_game == False
-            and group.coalition_formed == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        elif (
-            subsession.round_number == C.NUM_ROUNDS
-            and participant.end_game == False
-        ):
-            return True
-        elif (
-            participant.leftover == True
-            and participant.kicked == False
-            and participant.end_game == False
-            and player.round_number == 1
-        ):
-            return True
-        else:
-            return False
-
-    form_model = 'player'
-    form_fields = ['age', 'gender']
-
-
-class Debriefing(Page):
-    #@staticmethod
-    def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
-        if (
-            participant.end_game == False
-            and group.coalition_formed == True
-            and participant.kicked == False
-            and participant.leftover == False
-        ):
-            return True
-        elif (
-            subsession.round_number == C.NUM_ROUNDS
-            and participant.end_game == False
-        ):
-            return True
-        elif (
-            participant.leftover == True
-            and participant.kicked == False
-            and participant.end_game == False
-            and player.round_number == 1
-        ):
-            return True
-        else:
-            return False
+    form_model = "player"
+    form_fields = [
+        "trust_aft_1_C_to_A",
+        "trust_aft_2_C_to_A",
+        "trust_aft_3_C_to_A",
+        "trust_aft_4_C_to_A",
+        "trust_aft_5_C_to_A",
+        "trust_aft_6_C_to_A",
+        "trust_aft_7_C_to_A",
+        "trust_aft_8_C_to_A",
+        "trust_aft_1_C_to_B",
+        "trust_aft_2_C_to_B",
+        "trust_aft_3_C_to_B",
+        "trust_aft_4_C_to_B",
+        "trust_aft_5_C_to_B",
+        "trust_aft_6_C_to_B",
+        "trust_aft_7_C_to_B",
+        "trust_aft_8_C_to_B",
+    ]
 
 
 class Leftover(Page):
-    #@staticmethod
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
+        participant = player.participant
         if (
             participant.grouped == False
             and participant.kicked == False
@@ -2717,28 +2495,126 @@ class Leftover(Page):
             and player.round_number == 1
         ):
             return True
+        elif (
+            player.round_number == C.NUM_ROUNDS
+            and participant.end_game == False
+            and participant.leftover == True
+            and participant.kicked == False
+        ):
+            return True
         else:
             return False
 
-    #@staticmethod
-    #@staticmethod
+    @staticmethod
     def vars_for_template(player: Player):
         return vars_for_template(player)
 
-    #@staticmethod
-    #@staticmethod
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
+        participant = player.participant
         participant.leftover = True
 
 
-class ID(Page):
-    #@staticmethod
-    #@staticmethod
+class LastQuestions(Page):
+    """
+    Only for leftover participants, for a graceful ending.
+    """
+
+    form_model = "player"
+    form_fields = [
+        "competition",
+        "gen_trust_1",
+        "gen_trust_2",
+        "gen_trust_3",
+        "gen_trust_4",
+    ]
+
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
-        subsession = player.subsession # Seyit
-        group = player.group # Seyit
+
+        if (
+            not player.participant.kicked
+            and player.round_number == 1
+            and player.participant.kicked == False
+            and player.participant.leftover == True
+        ):
+            return True
+        elif (
+            player.round_number == C.NUM_ROUNDS
+            and player.participant.end_game == False
+            and player.participant.leftover == True
+            and player.participant.kicked == False
+        ):
+            return True
+        else:
+            return False
+
+
+class Funnel(Page):
+    form_model = "player"
+    form_fields = ["comment"]
+
+    @staticmethod
+    def is_displayed(player: Player):
+        participant = player.participant
+        subsession = player.subsession
+        group = player.group
+        if (
+            participant.end_game == False
+            and group.coalition_formed == True
+            and participant.kicked == False
+            and participant.leftover == False
+        ):
+            return True
+        elif subsession.round_number == C.NUM_ROUNDS and participant.end_game == False:
+            return True
+        elif (
+            participant.leftover == True
+            and participant.kicked == False
+            and participant.end_game == False
+            and player.round_number == 1
+        ):
+            return True
+        else:
+            return False
+
+
+class Debriefing(Page):
+    @staticmethod
+    def is_displayed(player: Player):
+        participant = player.participant
+        subsession = player.subsession
+        group = player.group
+        if (
+            participant.end_game == False
+            and group.coalition_formed == True
+            and participant.kicked == False
+            and participant.leftover == False
+        ):
+            return True
+        elif subsession.round_number == C.NUM_ROUNDS and participant.end_game == False:
+            return True
+        elif (
+            participant.leftover == True
+            and participant.kicked == False
+            and participant.end_game == False
+            and player.round_number == 1
+        ):
+            return True
+        else:
+            return False
+
+    def before_next_page(player: Player):
+        participant = player.participant
+        participant.end_game = True
+
+
+class ID(Page):
+    @staticmethod
+    def is_displayed(player: Player):
+        participant = player.participant
+        subsession = player.subsession
+        group = player.group
         if (
             participant.end_game == False
             and group.coalition_formed == True
@@ -2760,25 +2636,22 @@ class ID(Page):
         else:
             return False
 
-    #@staticmethod
-    #@staticmethod
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        participant = player.participant # Seyit
+        participant = player.participant
         participant.end_game = True
 
 
 class Kicked(Page):
-    #@staticmethod
-    #@staticmethod
+    @staticmethod
     def is_displayed(player: Player):
-        participant = player.participant # Seyit
+        participant = player.participant
         if participant.kicked == True:
             return True
         else:
             return False
 
-    #@staticmethod
-    #@staticmethod
+    @staticmethod
     def vars_for_template(player: Player):
         return vars_for_template(player)
 
@@ -2786,46 +2659,31 @@ class Kicked(Page):
 page_sequence = [
     Waitforgroup,
     Groupingconfirmation,
-    # Sliderinstructions,
-    # Slider,
-    # EndRound1,
-    # Slider2,
-    # EndRound2,
-    # Slider3,
     Waitforparticipants,
-    # PositionAssignment,
+    SVO_Assigned,
     AssignedPosition,
-    InstructionsCoalitions,
+    AssignedPosition2,
     ComprehensionCheck,
     ComprehensionCheck1,
     ComprehensionCheck2,
     ComprehensionCheck3,
-    BargainingStarts,
+    T2_A,
+    T2_B,
+    T2_C,
     NewRound,
     PhaseI,
     WaitForOffers,
-    OffersMade,
     PhaseII,
     WaitForSelection,
-    OffersSelected,
     PhaseIII_Success,
     Payoff,
     PhaseIII_Failure,
-    # SeatsDeserveA,
+    T3_A,
+    T3_B,
+    T3_C,
     Leftover,
-    IRI_PT_dutch,
-    IRI_EC_dutch,
-    Adapted_PT_dutch,
-    ManipulationCheck2control,
-    ManipulationCheck2controlBudget,
-    # Motivations,
-    # ManipulationCheck2,
-    # Device,
-    # Browser,
+    LastQuestions,
     Funnel,
-    Demographics,
-    PC_use,
     Debriefing,
-    # ID,
     Kicked,
 ]

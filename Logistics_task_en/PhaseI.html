@@ -1,5 +1,5 @@
 {{ block title }}
- Phase 1 of Round {{ player.round_number }}: Make a coalition proposal
+    Phase 1 of round {{ player.round_number }}: Make a coalition proposal
 {{ endblock }}
 
 {{ block styles }}
@@ -12,41 +12,69 @@
         ul#allocate_to_players div.controls,
         ul#allocate_to_players div.input-group {
             display: inline-block;
-
         }
     </style>
-
 {{ endblock }}
 
-
 {{ block content }}
-
-
     <div id="bargain">
-
         <p>
-            You are negotiating on behalf of <strong class="text-info"> Company {{ player.position }}</strong>.
-            That means you transport <strong class="text-info">{{ player.resources }} tons </strong> of cargo to Paris.
-        </p>
-
-        <p>Representing your competitors
-            {{ for p in player.get_others_in_group }}
-                <strong class="text-success"><br>- Company {{ p.position }}</strong>
-                (transports <strong class="text-success">{{ p.resources }} tons</strong>)
-            {{ endfor }}
-        </p>
-        <p>
-            A minimum of {{ decision_point }} tons is needed to the big truck and thus obtain a bonus of {{ total_payoff }} euros.
-        </p>
-
-         <p>
-            Now indicate (a) with whom you want to form a coalition and also (b) how you want to distribute the {{ total_payoff }} euros among the members of the coalition.
+            A minimum of {{ decision_point }} tons is needed to use the big truck and thus obtain a bonus of {{ total_payoff }} euros. 
+            The three companies involved in this negotiation are:
         </p>
 
         <p>
-            I want to form the following coalition:
+            <ul>
+                {{ for other_player in player.group.get_players }}
+                    {{ if other_player.position == 'A' }}
+                        <li><strong class="text-success">Company A</strong>
+                            {{ if player.position == 'A' }}
+                            <strong class="text-success">(This is you)</strong>
+                            {{ endif }}
+                        </li> 
+
+                        <img src="{{ static 'global/images/company_a.png' }}" style="height: 1.66cm; width: 5.95cm;">
+                        {{ if player.group.is_experimental }}
+                        <img src="data:image/png;base64,{{ other_player.gauge_plot_svo }}" /><br>
+                        {{ endif }}
+                    {{ endif }}
+
+                    {{ if other_player.position == 'B' }}
+                        <li><strong class="text-success">Company B</strong>
+                            {{ if player.position == 'B' }}
+                            <strong class="text-success">(This is you)</strong>
+                            {{ endif }}
+                        </li>
+                        <img src="{{ static 'global/images/company_b.png' }}" style="height: 1.69cm; width: 4.95cm;">
+                        {{ if player.group.is_experimental }}
+                        <img src="data:image/png;base64,{{ other_player.gauge_plot_svo }}" /><br>
+                        {{ endif }}
+                    {{ endif }}
+
+                    {{ if other_player.position == 'C' }}
+                        <li><strong class="text-success">Company C</strong>
+                            {{ if player.position == 'C' }}
+                            <strong class="text-success">(This is you)</strong>
+                            {{ endif }}
+                        </li>
+
+                        <img src="{{ static 'global/images/company_c.png' }}" style="height: 1.68cm; width: 3.95cm;">
+                        {{ if player.group.is_experimental }}
+                        <img src="data:image/png;base64,{{ other_player.gauge_plot_svo }}" /><br>
+                        {{ endif }}
+                    {{ endif }}
+                {{ endfor }}
+            </ul>
         </p>
 
+        <p>
+            Choose which coalition you want to form and specify how the {{ total_payoff }} euros should be distributed among the members.
+        </p>
+
+
+        <p>
+            <strong>Coalition options:</strong>
+        </p>
 
         {{ if player.position == 'A' }}
             <ul>
@@ -55,13 +83,6 @@
                         <input data-desc="{{ coalition }}" type="radio" name="proposed_coalition"
                                value="{{ coalition }}"
                                required> {{ coalition }}-coalition
-                        {{ if coalition == 'AB' }}
-                        (with Company B transporting {{ resources_player_B }} tons of cargo)
-                        {{ elif coalition == 'AC' }}
-                        (with Company C transporting {{ resources_player_C }} tons of cargo)
-                        {{ elif coalition == 'ABC' }}
-                        (with Company B transporting {{ resources_player_B }} tons of cargo and with Company C transporting {{ resources_player_C }} tons of cargo)
-                        {{ endif }}
                     </li>
                 {{ endfor }}
             </ul>
@@ -73,13 +94,6 @@
                         <input data-desc="{{ coalition }}" type="radio" name="proposed_coalition"
                                value="{{ coalition }}"
                                required> {{ coalition }}-coalition
-                        {{ if coalition == 'AB' }}
-                        (with Company A transporting {{ resources_player_A }} tons of cargo)
-                        {{ elif coalition == 'BC' }}
-                        (with Company C transporting {{ resources_player_C }} tons of cargo)
-                        {{ elif coalition == 'ABC' }}
-                        (with Company A transporting {{ resources_player_A }} tons of cargo and with Company C transporting {{ resources_player_C }} tons of cargo)
-                        {{ endif }}
                     </li>
                 {{ endfor }}
             </ul>
@@ -91,59 +105,49 @@
                         <input data-desc="{{ coalition }}" type="radio" name="proposed_coalition"
                                value="{{ coalition }}"
                                required> {{ coalition }}-coalition
-                        {{ if coalition == 'AC' }}
-                        (with Company A transporting {{ resources_player_A }} tons of cargo)
-                        {{ elif coalition == 'BC' }}
-                        (with Company B transporting {{ resources_player_B }} tons of cargo)
-                        {{ elif coalition == 'ABC' }}
-                        (with Company A transporting {{ resources_player_A }} tons of cargo and with Company B transporting {{ resources_player_B }} tons of cargo)
-                        {{ endif }}
                     </li>
                 {{ endfor }}
             </ul>
         {{ endif }}
 
-      <p id="total-alert" class="alert alert-warning text-normal" style="display:none">
-          The premium does not add up to {{ total_payoff }} euros. Fill in the numbers again.
+        <p id="total-alert" class="alert alert-warning text-normal" style="display:none">
+            The premium does not add up to {{ total_payoff }} euros. Fill in the numbers again.
         </p>
 
         <p id="emptyfield-alert" class="alert alert-warning text-normal" style="display:none">
             You have not entered a valid number in any of the boxes. Please enter a valid number between 0 and {{ total_payoff }}.
         </p>
 
-
+        <!-- below section where they allocate the payoff -->
         <ul id="allocate_to_players">
-
-        <p id="allocate_to_players_text">
-             Indicate how you want to divide the premium of {{ total_payoff }} euros: how much money will your own company get and how much will another company get?
-            (Note: this must add up to {{ total_payoff }}).
-        </p>
+            <p id="allocate_to_players_text">
+                Decide how you would like to split the {{ total_payoff }} euros. The total must add up to {{ total_payoff }}.
+            </p>
 
             <li class="{{ if player.position == 'A' }}you{{ endif }}" id="allocate_to_player_A">
                 Company <strong class="text-success">A</strong>
-                (transports {{ resources_player_A }} tons)
                 {{ if player.position == 'A' }}
-                <small class="text-info">(This is you)</small>{{ endif }}
+                    <small class="text-info">(This is you)</small>
+                {{ endif }}
                 {{ formfield player.allocate_to_player_A label='€' }}
-
             </li>
+
             <li class="{{ if player.position == 'B' }}you{{ endif }}" id="allocate_to_player_B">
                 Company <strong class="text-success">B</strong>
-                (transports {{ resources_player_B }} tons)
                 {{ if player.position == 'B' }}
-                <small class="text-info">(This is you)</small>{{ endif }}
+                    <small class="text-info">(This is you)</small>
+                {{ endif }}
                 {{ formfield player.allocate_to_player_B label='€' }}
-
             </li>
+
             <li class="{{ if player.position == 'C' }}you{{ endif }}" id="allocate_to_player_C">
                 Company <strong class="text-success">C</strong>
-                (transports {{ resources_player_C }} tons)
                 {{ if player.position == 'C' }}
-                <small class="text-info">(This is you)</small>{{ endif }}
+                    <small class="text-info">(This is you)</small>
+                {{ endif }}
                 {{ formfield player.allocate_to_player_C label='€' }}
             </li>
         </ul>
-
 
         <div class="row">
             <div class="col-md-1 col-md-offset-11">
@@ -155,10 +159,7 @@
 
     </div> <!-- bargain -->
 
-
     <div id="confirm" style="display: none;">
-
-
         <p>
             You made the following offer:
         </p>
@@ -175,8 +176,6 @@
             <li><input type="radio" name="confirmation" value="no" required="" disabled> No</li>
         </ul>
 
-
-
         <div class="row">
             <div class="col-md-1 col-md-offset-11">
                 <button id="real-submit" class="btn btn-primary btn-large btn-primary">
@@ -184,10 +183,7 @@
                 </button>
             </div>
         </div>
-
-
     </div>
-
 {{ endblock }}
 
 {{ block scripts }}
@@ -211,7 +207,6 @@
             allocate_B.hide();
             allocate_C.hide();
             text.hide();
-
 
             function totalOffered() {
                 var total = 0;
@@ -237,32 +232,30 @@
 
                 if (position == 'A') {
                     if (coalition == 'AB'){
-                        desc = "An AB coalition between your company and Company B, where you get" + $("#allocate_to_players li.you input").val() + " euros, and Company B gets" + $("#allocate_to_player_B input").val() + " euros"}
+                        desc = "An AB coalition between your company and Company B, where you get " + $("#allocate_to_players li.you input").val() + " euros, and Company B gets " + $("#allocate_to_player_B input").val() + " euros"}
                     else if (coalition == 'AC'){
-                        desc = "An AC coalition between your company and Company C, where you get" + $("#allocate_to_players li.you input").val() + " euros, and Company C gets" + $("#allocate_to_player_C input").val() + " euros"}
+                        desc = "An AC coalition between your company and Company C, where you get " + $("#allocate_to_players li.you input").val() + " euros, and Company C gets " + $("#allocate_to_player_C input").val() + " euros"}
                     else if (coalition == 'ABC'){
-                        desc = "An ABC coalition between your company, Company B and Company C, where you get" + $("#allocate_to_players li.you input").val() + " euros, and Company B gets" + $("#allocate_to_player_B input").val() + " euros" +', and Company C gets' + $("#allocate_to_player_C input").val() + " euros"}
+                        desc = "An ABC coalition between your company, Company B and Company C, where you get " + $("#allocate_to_players li.you input").val() + " euros, and Company B gets " + $("#allocate_to_player_B input").val() + " euros" +', and Company C gets ' + $("#allocate_to_player_C input").val() + " euros"}
                     }
 
                 else if (position == 'B'){
                     if (coalition == 'AB'){
-                        desc = "An AB coalition between your company and Company A, where you get" + $("#allocate_to_players li.you input").val() + " euros, and Company A gets" + $("#allocate_to_player_A input").val() + " euros"}
+                        desc = "An AB coalition between your company and Company A, where you get " + $("#allocate_to_players li.you input").val() + " euros, and Company A gets " + $("#allocate_to_player_A input").val() + " euros"}
                     else if (coalition == 'BC'){
-                        desc = "An BC coalition between your company and Company C, where you get" + $("#allocate_to_players li.you input").val() + " euros, and Company C gets" + $("#allocate_to_player_C input").val() + " euros"}
+                        desc = "A BC coalition between your company and Company C, where you get " + $("#allocate_to_players li.you input").val() + " euros, and Company C gets " + $("#allocate_to_player_C input").val() + " euros"}
                     else if (coalition == 'ABC'){
-                        desc = "Een ABC coalition between your company, Company A and Company C, where you get" + $("#allocate_to_players li.you input").val() + " euros, Company A gets" + $("#allocate_to_player_A input").val() + " euros" +', and Company C gets' + $("#allocate_to_player_C input").val() + " euros"}
+                        desc = "An ABC coalition between your company, Company A and Company C, where you get " + $("#allocate_to_players li.you input").val() + " euros, Company A gets " + $("#allocate_to_player_A input").val() + " euros" +', and Company C gets ' + $("#allocate_to_player_C input").val() + " euros"}
                     }
 
                 else if (position == 'C'){
                     if (coalition == 'AC'){
-                        desc = "An AC coalition between your company and Company A, where you get" + $("#allocate_to_players li.you input").val() + " euros, and Company A gets" + $("#allocate_to_player_A input").val() + " euros"}
+                        desc = "An AC coalition between your company and Company A, where you get " + $("#allocate_to_players li.you input").val() + " euros, and Company A gets " + $("#allocate_to_player_A input").val() + " euros"}
                     else if (coalition == 'BC'){
-                        desc = "An BC coalition between your company and Company B, where you get" + $("#allocate_to_players li.you input").val() + " euros, and Company B gets" + $("#allocate_to_player_B input").val() + " euros"}
+                        desc = "A BC coalition between your company and Company B, where you get " + $("#allocate_to_players li.you input").val() + " euros, and Company B gets " + $("#allocate_to_player_B input").val() + " euros"}
                     else if (coalition == 'ABC'){
-                        desc = "Een ABC coalition between your company, Company A and Company B, where you get" + $("#allocate_to_players li.you input").val() + " euros, Company A gets" + $("#allocate_to_player_A input").val() + " euros" +', and Company B gets' + $("#allocate_to_player_B input").val() + " euros"}
+                        desc = "An ABC coalition between your company, Company A and Company B, where you get " + $("#allocate_to_players li.you input").val() + " euros, Company A gets " + $("#allocate_to_player_A input").val() + " euros" +', and Company B gets ' + $("#allocate_to_player_B input").val() + " euros"}
                     }
-
-
 
                 $("#offer-desc").text(desc);
             }
@@ -328,8 +321,6 @@
     });
 
 
-
-
             $("button#real-submit").click(function (evt) {
                 evt.preventDefault();
                 if (form.checkValidity()) {
@@ -379,4 +370,3 @@
         })
     </script>
 {{ endblock }}
-

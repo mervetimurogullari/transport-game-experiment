@@ -1,51 +1,57 @@
 {{ block title }}
-    Overzicht onderzoek
+    Overzicht van het onderzoek 
 {{ endblock }}
 
 {{ block content }}
+    <p>
+        Dit onderzoek bestaat uit drie delen.
+    </p>
 
-        <p>
-            Dit onderzoek bestaat uit drie delen.
-        </p>
-        <p>
-            In het eerste deel leggen we de situatie uit en ook hoe u met de twee andere deelnemers zult onderhandelen.
+    <p>
+        <strong>Deel 1:</strong> De uitleg van dit onderzoek. 
         {{ if timers }}
-                In dit deel van het onderzoek is er een tijdslimiet. U hebt maximaal {{ timeout_time_minutes }}0 minuten per pagina.
+        Elke pagina in dit deel heeft een tijdslimiet van {{ timeout_time_minutes }} minuten.
         {{ endif }}
-            Lees alle instructies goed door zodat u de situatie goed begrijpt.
-        </p>
+        Lees alles goed door om het onderzoek helemaal te begrijpen. 
+        {{ if comprehension_check }}
+        Aan het einde stellen we u enkele vragen om te kijken of alles duidelijk is.
+        {{ endif }}
+    </p>
 
-        <p>
-            In het tweede deel wordt u gekoppeld aan twee andere deelnemers.
-            {{ if timers }}
-            U hebt maximaal {{ timeout_time_minutes }}0 minuten per pagina om uw antwoord in te vullen, sneller mag natuurlijk altijd.  Dit zorgt ervoor dat u en de andere twee deelnemers niet te lang op elkaar hoeven te wachten.
-            {{ endif }}
-            {{ if incentives }}
-            Belangrijk om te onthouden is dat u extra geld kunt verdienen tijdens de onderhandeling. Hoe beter u onderhandelt, hoe meer u krijgt.
-            {{ endif }}
-        </p>
+    <p>
+        <strong>Deel 2:</strong> U wordt gekoppeld aan twee andere deelnemers voor de onderhandeling. 
+        {{ if timers }}
+        Elke pagina in dit deel heeft ook een tijdslimiet van {{ timeout_time_minutes }} minuten, maar u mag natuurlijk 
+        sneller antwoorden geven als u dat wilt. Dit helpt om de onderhandeling vlot te laten verlopen en lange wachttijden 
+        te voorkomen. 
+        {{ endif }}
+        {{ if incentives }}
+        <!-- Onthoud dat de uitkomst van de onderhandeling u punten kan opleveren. Hoe beter uw resultaten van de onderhandeling, hoe meer punten u verdient. -->
+        Onthoud dat de uitkomst van de onderhandeling u geld kan opleveren. Hoe beter het resultaat van de onderhandeling, hoe meer geld u verdient.
+        {{ endif }}
+        Tijdens de onderhandeling krijgt u een paar vragen over wat u denkt over de andere deelnemers. 
+    </p>
 
+    <p>
+        <strong>Deel 3:</strong> Dit deel bestaat uit een paar vragen over u en over het onderzoek. 
+        {{ if timers }}
+        Er is hier geen tijdslimiet omdat u niet langer met andere mensen onderhandelt. 
+        {{ endif }}
+    </p>
 
-        <p>
-            In het derde deel stellen we een paar vragen over uzelf en over het onderzoek.
-            {{ if timers }}
-            Tijdens dit deel van het onderzoek is er geen tijdslimiet omdat u niet meer in onderhandeling bent met anderen.
-            {{ endif }}
-        </p>
+    <p>
+        <strong>Belangrijk: Soms stellen we dezelfde vragen nog een keer. We doen dit om te kijken of er iets veranderd is 
+        in wat u denkt over de andere deelnemers door de onderhandeling.</strong>
+    </p>
 
+    <p>
+        Klik nu op “Volgende” voor meer uitleg over de onderhandeling.
+    </p>
 
-        <p>
-            Op het volgende scherm krijgt u meer informatie over de situatie en het onderhandelen.
-        </p>
-
-        <p>
-         Klik nu op “Volgende”
-        </p>
-
-<div class="row">
-    <div class="col-md-1 col-md-offset-11">
-    <button class="o-tree-btn-next btn btn-primary">Volgende</button>
+    <div class="row">
+        <div class="col-md-1 col-md-offset-11">
+        <button class="o-tree-btn-next btn btn-primary">Volgende</button>
+        </div>
     </div>
-</div>
-
-{{ endblock }}
+    
+    {{ endblock }}

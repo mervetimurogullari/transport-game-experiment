@@ -1,0 +1,88 @@
+{{ load otree static }}
+{{ load static }}
+
+{{ block title }}
+    Questions 
+{{ endblock }}
+
+{{ block content }}
+
+<p>
+    Please answer the following questions by selecting the option that best represents your view. 
+</p>
+
+
+<form>
+    <!-- Competition Question -->
+    <div class="form-group">
+        <label for="competition">{{ form.competition.label }}</label>
+        <div class="radio-group">
+            {{ form.competition }}
+        </div>
+    </div>
+
+    <!-- General Trust Question 1 -->
+    <div class="form-group">
+        <label for="gen_trust_1">{{ form.gen_trust_1.label }}</label>
+        <div class="radio-group">
+            {{ form.gen_trust_1 }}
+        </div>
+    </div>
+
+    <!-- General Trust Question 2 -->
+    <div class="form-group">
+        <label for="gen_trust_2">{{ form.gen_trust_2.label }}</label>
+        <div class="radio-group">
+            {{ form.gen_trust_2 }}
+        </div>
+    </div>
+
+    <!-- General Trust Question 3 -->
+    <div class="form-group">
+        <label for="gen_trust_3">{{ form.gen_trust_3.label }}</label>
+        <div class="radio-group">
+            {{ form.gen_trust_3 }}
+        </div>
+    </div>
+
+    <!-- General Trust Question 4 -->
+    <div class="form-group">
+        <label for="gen_trust_4">{{ form.gen_trust_4.label }}</label>
+        <div class="radio-group">
+            {{ form.gen_trust_4 }}
+        </div>
+    </div>
+
+    {{ next_button }}
+
+</form>
+
+<style>
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group > label {
+        font-weight: bold;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .radio-group {
+        display: flex;
+        justify-content: start; 
+        gap: 10px; 
+        flex-wrap: wrap; 
+    }
+
+    .radio-group label {
+        font-weight: normal; 
+        display: inline-block; 
+    }
+
+    .radio-group input[type="radio"] {
+        margin-right: 5px; 
+    }
+</style>
+
+{{ endblock }}

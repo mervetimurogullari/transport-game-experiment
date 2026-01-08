@@ -1,25 +1,30 @@
 {{ block title }}
-Forming groups
+    Forming groups
 {{ endblock }}
 
 {{ block content }}
+    <p>
+        You will be paired with two other participants shortly. This may take a while as they may still be reading the instructions. 
+        Therefore, please wait for up to 5 minutes to be matched with the other two players. 
+    </p>
 
-        <p>
-            We will now pair you with two other participants. This may take a while. The others may not have finished reading the instructions yet.
-        </p>
+    <p>
+        <strong class="text-danger">
+        After you are matched with the participants, please keep this browser window open until the study ends.
+        This helps everything run smoothly for all participants.
+        </strong>
+    </p>
 
-    {{ if timers }}
+    <p>
+        Should you not be matched after 5 minutes with other players, unfortunately, you will not be able to continue with the 
+        real-time negotiation. Instead, you will be directed to answer some questions about the study. 
+    </p>
 
-        <p>
-            Note that after groups have been formed the interactive part of the study begins. During this part, you will have to complete each page in {{ timeout_time_minutes }}0 minutes. This is to ensure that others are not waiting too long.
-        </p>
-
-    {{ endif }}
-
-        <p>
+    <p>
         Now click on “Next”
-        </p>
+    </p>
 
-{{ next_button }}
-
+    {{ next_button }}
+    
 {{ endblock }}
+

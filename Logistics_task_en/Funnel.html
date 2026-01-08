@@ -1,12 +1,11 @@
 {{ block title }}
-Last questions
+    Share your feedback
 {{ endblock }}
 
 {{ block content }}
 
+    {{ formfield player.comment label="Do you have any comments about this study? If so, you can enter your comment below." }}
 
-    {{ formfield player.comment label="Do you have any comments about this study? You can enter your comment below." }}
-
-{{ next_button }}
+    {{ next_button }}
 
 {{ endblock }}

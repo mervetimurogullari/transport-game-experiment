@@ -1,0 +1,62 @@
+{{ load otree static }}
+
+{{ block title }}
+    U vertegenwoordigt 
+        {{ if player.position == 'A' }} het grote {{ endif }}
+        {{ if player.position == 'B' }} het middelgrote {{ endif }}
+        {{ if player.position == 'C' }} het kleine {{ endif }} 
+    bedrijf (Bedrijf {{ player.position }})
+{{ endblock }}
+
+{{ block content }}
+
+    {{ if player.group.is_experimental }}
+
+        <p>
+            Ongeveer twee weken geleden hebt u een vragenlijst ingevuld waarin u werd gevraagd hoe u het liefst geld verdeelt 
+            tussen uzelf en anderen. De afbeelding hieronder laat zien wat uw resultaat was.
+        </p>
+
+        <img src="data:image/png;base64,{{ player.gauge_plot_svo }}" />
+
+        <h4>Met wie onderhandelt u?</h4>
+
+        <p>
+            De andere deelnemers hebben dezelfde vragenlijst ingevuld. Dit zijn hun resultaten.
+        </p>
+
+        <p>
+            {{ for other_player in player.get_others_in_group }}
+                Het resultaat van Bedrijf <strong>{{ other_player.position }}</strong>, dat <strong>{{other_player.resources}}</strong> 
+                ton vervoert, ziet u hieronder.<br>
+
+                <img src="data:image/png;base64,{{ other_player.gauge_plot_svo }}" /><br>
+
+            {{ endfor }}
+
+            Alle deelnemers zien nu de resultaten van alle deelnemers in de onderhandeling.
+        </p>
+
+    {{ else }}
+        
+        <h4>Met wie onderhandelt u?</h4> 
+
+        <p></p>
+            {{ for other_player in player.get_others_in_group }}
+                 Bedrijf <strong>{{ other_player.position }}</strong> vervoert <strong>{{other_player.resources}}</strong> ton.<br><br> 
+            {{ endfor }}
+        </p>
+
+    {{ endif }}
+
+    <p>
+        Klik nu op “Volgende”
+    </p>
+
+    <div class="row">
+        <div class="col-md-1 col-md-offset-11">
+        <button class="o-tree-btn-next btn btn-primary">Volgende</button>
+        </div>
+    </div>
+
+{{ endblock }}

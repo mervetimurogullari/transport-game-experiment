@@ -3,11 +3,13 @@
 {{ endblock }}
 
 {{ block content }}
-
-    <p>Please answer the following questions before beginning negotiations.</p>
+    <p>
+        Before the negotiation begins, we would like to check whether you have understood the information so far. 
+        Please answer the question below.
+    </p>
 
     {{ formfield player.comprehension_position label=position_label }}
 
-
-{{ next_button }}
+    {{ next_button }}
+    
 {{ endblock }}

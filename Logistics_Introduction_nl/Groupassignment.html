@@ -1,24 +1,28 @@
 {{ block title }}
-    Koppelen aan andere deelnemers
+    Groepen vormen
 {{ endblock }}
 
 {{ block content }}
+    <p>
+        U wordt hierna aan twee andere deelnemers gekoppeld. Dit kan even duren als de andere deelnemers de instructies nog aan het lezen zijn. 
+        Wacht daarom maximaal 5 minuten om aan de andere twee spelers gekoppeld te worden.
+    </p>
 
-        <p>
-            We gaan u nu koppelen aan twee andere deelnemers. Dit kan even duren. De anderen kunnen nog niet klaar zijn met het lezen van de instructie.
-        </p>
+    <p>
+        <strong class="text-danger">
+        Sluit u dit browservenster alstublieft <u>niet</u>, <u>nadat</u> u bent gekoppeld aan de andere deelnemers. 
+        Dit helpt om alles soepel te laten verlopen voor alle deelnemers.
+        </strong>
+    </p>
 
-    {{ if timers }}
+    <p>
+        Als u na 5 minuten nog niet aan andere spelers bent gekoppeld dan gaat de live onderhandeling helaas niet door. 
+        In plaats daarvan krijgt u dan een aantal vragen over het onderzoek.
+    </p>
 
-        <p>
-            Als het niet mogelijk is om u binnen {{ timeout_time_minutes }}0 minuten aan twee andere deelnemers te koppelen, verschijnt er een knop. Op dat moment kunt u nog even wachten op de twee andere deelnemers of op de knop drukken om het onderzoek af te ronden en uw basisvergoeding te krijgen.
-        </p>
-
-    {{ endif }}
-
-        <p>
+    <p>
         Klik nu op “Volgende”
-        </p>
+    </p>
 
 <div class="row">
     <div class="col-md-1 col-md-offset-11">
